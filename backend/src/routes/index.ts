@@ -1,0 +1,37 @@
+import { Router } from "express";
+import authRoutes from "./auth.routes";
+import userRoutes from "./users.routes";
+import attendanceRoutes from "./attendance.routes";
+import outpassRoutes from "./outpass.routes";
+import resultRoutes from "./results.routes";
+import noteRoutes from "./notes.routes";
+import cafeteriaRoutes from "./cafeteria.routes";
+import timetableRoutes from "./timetable.routes";
+import holidayRoutes from "./holidays.routes";
+import eventRoutes from "./events.routes";
+import notificationRoutes from "./notifications.routes";
+import qrRoutes from "./qr.routes";
+import uploadRoutes from "./upload.routes";
+import collegeRoutes from "./college.routes";
+import dashboardRoutes from "./dashboard.routes";
+
+const router = Router();
+
+router.use("/auth", authRoutes);
+router.use("/users", userRoutes);
+router.use("/attendance", attendanceRoutes);
+router.use("/outpass", outpassRoutes);
+router.use("/results", resultRoutes);
+router.use("/notes", noteRoutes);
+router.use("/cafeteria", cafeteriaRoutes);
+router.use("/timetable", timetableRoutes);
+router.use("/holidays", holidayRoutes);
+router.use("/events", eventRoutes);
+router.use("/notifications", notificationRoutes);
+router.use("/qr", qrRoutes);
+router.use("/upload", uploadRoutes);
+router.use("/college", collegeRoutes);
+router.use("/", dashboardRoutes);
+
+export default router;
+

@@ -1,0 +1,47 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: 0 0% 100%;
+  --foreground: 240 10% 3.9%;
+  --card: 0 0% 100%;
+  --card-foreground: 240 10% 3.9%;
+  --muted: 240 5% 96%;
+  --muted-foreground: 240 3.8% 46.1%;
+  --primary: 222.2 47.4% 11.2%;
+  --primary-foreground: 210 40% 98%;
+  --secondary: 210 40% 96.1%;
+  --secondary-foreground: 222.2 47.4% 11.2%;
+  --border: 214.3 31.8% 91.4%;
+  --input: 214.3 31.8% 91.4%;
+  --radius: 0.6rem;
+  --font-sans: "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+    sans-serif;
+  --font-mono: "Roboto Mono", "SFMono-Regular", Menlo, Monaco, Consolas, monospace;
+}
+
+.dark {
+  --background: 224 30% 7%;
+  --foreground: 210 40% 98%;
+  --card: 223 31% 12%;
+  --card-foreground: 210 40% 98%;
+  --muted: 223 31% 15%;
+  --muted-foreground: 215 20% 65%;
+  --primary: 210 40% 98%;
+  --primary-foreground: 222 47% 11%;
+  --secondary: 215 25% 15%;
+  --secondary-foreground: 210 40% 98%;
+  --border: 223 31% 20%;
+  --input: 223 31% 20%;
+}
+
+body {
+  @apply bg-[hsl(var(--background))] text-[hsl(var(--foreground))] antialiased;
+  font-family: var(--font-sans);
+  font-feature-settings: "liga" 1, "kern" 1;
+}
+
+.glass-panel {
+  @apply bg-white/70 backdrop-blur border border-white/40 shadow-lg rounded-lg;
+}
