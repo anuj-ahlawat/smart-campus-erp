@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 ## Smart Campus ERP
 
 Smart Campus is a CAMU-like reference implementation that ships a **custom JWT + refresh token auth system**, role-isolated layouts, invite-only onboarding, QR powered outpasses, Socket.io notifications, and full Express/Mongoose backend—no Clerk, Docker, or Redis required.
@@ -118,3 +119,6 @@ npm run cy:run
 - **Backend**: Deploy `backend/` to any Node 20+ host (PM2, systemd, Fly.io, Railway). Run `npm install && npm run build && npm start`.
 - **CI/CD**: `.github/workflows/ci.yml` caches npm modules, runs lint, executes backend tests, and builds the Next app. Extend it with deploy steps as needed.
 - **Migrations**: `backend/scripts/import-invites.ts` imports CSV invite codes (Usage: `ts-node scripts/import-invites.ts invites.csv <collegeId> [adminId]`).
+=======
+# smart-campus-erp
+>>>>>>> e98db08b9db249e2d60e42ab469d07b5b040bf27
