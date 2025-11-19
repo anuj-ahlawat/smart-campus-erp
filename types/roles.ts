@@ -49,8 +49,9 @@ export const ROLE_NAV_LINKS: Record<
     { label: "Dashboard", href: "/admin/dashboard" },
     { label: "Users", href: "/admin/users" },
     { label: "Attendance", href: "/admin/attendance" },
-    { label: "Outpass", href: "/admin/outpass" },
-    { label: "Onboarding", href: "/admin/onboarding" },
+    { label: "Events", href: "/admin/events" },
+    { label: "Results", href: "/admin/results" },
+    { label: "Fees", href: "/admin/fees" },
     { label: "Settings", href: "/admin/settings" }
   ],
   student: [
@@ -58,6 +59,7 @@ export const ROLE_NAV_LINKS: Record<
     { label: "Attendance", href: "/student/attendance" },
     { label: "Outpass", href: "/student/outpass" },
     { label: "Results", href: "/student/results" },
+    { label: "Events", href: "/student/events" },
     { label: "Notes", href: "/student/notes" },
     { label: "Timetable", href: "/student/timetable" },
     { label: "Cafeteria", href: "/student/cafeteria" }
@@ -72,6 +74,8 @@ export const ROLE_NAV_LINKS: Record<
     { label: "Dashboard", href: "/parent/dashboard" },
     { label: "Attendance", href: "/parent/attendance" },
     { label: "Results", href: "/parent/results" },
+    { label: "Events", href: "/parent/events" },
+    { label: "Fees", href: "/parent/fees" },
     { label: "Outpass", href: "/parent/outpass" }
   ],
   warden: [

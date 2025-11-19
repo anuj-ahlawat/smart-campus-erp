@@ -42,10 +42,30 @@ export const listStudentOutpass = asyncHandler(async (req: AuthRequest, res: Res
   res.json({ status: StatusCodes.OK, data: outpasses });
 });
 
+export const listPendingForWarden = asyncHandler(async (req: AuthRequest, res: Response) => {
+  if (!req.authUser) {
+    return res.status(StatusCodes.UNAUTHORIZED).json({
+      status: StatusCodes.UNAUTHORIZED,
+      code: "AUTH_REQUIRED",
+      message: "Authentication required"
+    });
+  }
+
+  const docs = await OutpassModel.find({
+    collegeId: req.authUser.collegeId,
+    wardenApproval: "pending",
+    status: { $nin: ["cancelled", "rejected"] }
+  })
+    .sort({ createdAt: -1 })
+    .populate("studentId", "name email classSection");
+
+  res.json({ status: StatusCodes.OK, data: docs });
+});
+
 const updateStatus = async (id: string, status: string, field: string) => {
   const outpass = await OutpassModel.findById(id);
   if (!outpass) throw new Error("Outpass not found");
-  (outpass as never)[field] = status;
+  (outpass as unknown as Record<string, unknown>)[field] = status;
   if (status === "approved") {
     outpass.status = "approved";
   }

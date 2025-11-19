@@ -19,7 +19,7 @@ const ensureAuth = (req: AuthRequest, res: Response) => {
 
 export const listUsers = asyncHandler(async (req: AuthRequest, res: Response) => {
   if (!ensureAuth(req, res)) return;
-  const { role, department, hostelStatus } = req.query;
+  const { role, department, hostelStatus, parentEmail } = req.query;
   const filter: Record<string, unknown> = {
     collegeId: req.authUser!.collegeId,
     status: { $ne: "inactive" }
@@ -27,6 +27,7 @@ export const listUsers = asyncHandler(async (req: AuthRequest, res: Response) =>
   if (role) filter.role = role;
   if (department) filter.department = department;
   if (hostelStatus !== undefined) filter.hostelStatus = hostelStatus === "true";
+  if (parentEmail) filter.parentEmail = parentEmail;
   const users = await UserModel.find(filter)
     .select("-passwordHash")
     .sort({ createdAt: -1 });

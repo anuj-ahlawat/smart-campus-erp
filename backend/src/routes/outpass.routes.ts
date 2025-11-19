@@ -3,6 +3,7 @@ import {
   applyOutpass,
   getOutpass,
   listStudentOutpass,
+  listPendingForWarden,
   parentDecision,
   wardenDecision,
   adminOverride,
@@ -30,13 +31,17 @@ router.post(
   applyOutpass
 );
 
-router.get("/:id", requireAuth, getOutpass);
+// Warden queue must be defined before the generic :id route
+router.get("/queue", requireAuth, roleGuard("warden"), listPendingForWarden);
+
 router.get(
   "/student/:studentId",
   requireAuth,
   roleGuard(["student", "parent", "warden", "admin"]),
   listStudentOutpass
 );
+
+router.get("/:id", requireAuth, getOutpass);
 
 router.put(
   "/:id/parent-approve",

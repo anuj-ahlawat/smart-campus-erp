@@ -151,7 +151,18 @@ export const login = asyncHandler(async (req, res) => {
         collegeId: user.collegeId.toString(),
         email: user.email,
         department: user.department,
-        classSection: user.classSection
+        classSection: user.classSection,
+        hostelStatus: user.hostelStatus,
+        roomNumber: user.roomNumber,
+        admissionNo: user.admissionNo,
+        admissionYear: user.admissionYear,
+        rollNo: user.rollNo,
+        degree: user.degree,
+        semester: user.semester,
+        course: user.course,
+        collegeName: user.collegeName,
+        guardianPhone: user.guardianPhone,
+        address: user.address
       }
     }
   });
@@ -414,7 +425,7 @@ export const currentUser = asyncHandler(async (req: AuthRequest, res) => {
   }
 
   const user = await UserModel.findById(req.authUser.id).select(
-    "name email role phone collegeId department classSection hostelStatus roomNumber status isEmailVerified"
+    "name email role phone collegeId department classSection hostelStatus roomNumber status isEmailVerified admissionNo admissionYear rollNo degree semester course collegeName guardianPhone address"
   );
 
   if (!user) {
@@ -439,6 +450,15 @@ export const currentUser = asyncHandler(async (req: AuthRequest, res) => {
       classSection: user.classSection,
       hostelStatus: user.hostelStatus,
       roomNumber: user.roomNumber,
+      admissionNo: user.admissionNo,
+      admissionYear: user.admissionYear,
+      rollNo: user.rollNo,
+      degree: user.degree,
+      semester: user.semester,
+      course: user.course,
+      collegeName: user.collegeName,
+      guardianPhone: user.guardianPhone,
+      address: user.address,
       status: user.status,
       isEmailVerified: user.isEmailVerified
     }

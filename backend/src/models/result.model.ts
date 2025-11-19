@@ -4,7 +4,7 @@ const resultSchema = new Schema(
   {
     collegeId: { type: Schema.Types.ObjectId, ref: "College", required: true, index: true },
     studentId: { type: Schema.Types.ObjectId, ref: "User", required: true, index: true },
-    subjectId: { type: Schema.Types.ObjectId, ref: "Subject", required: true },
+    subjectId: { type: String, required: true },
     marks: Number,
     grade: String,
     uploadedBy: { type: Schema.Types.ObjectId, ref: "User" },

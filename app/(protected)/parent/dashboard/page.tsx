@@ -1,46 +1,87 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { RoleLayout } from "@/components/layout/RoleLayout";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { DataTable } from "@/components/ui/table";
 import { useRoleGuard } from "@/hooks/useRoleGuard";
 import { useApi } from "@/hooks/useApi";
+import { useAuth } from "@/hooks/useAuth";
+import { StudentProfileCard } from "@/components/student/StudentProfileCard";
 
-const pendingOutpasses = [
-  { id: "OPS-310", student: "Ishaan", reason: "Hackathon", status: "pending" },
-  { id: "OPS-311", student: "Ishaan", reason: "Medical", status: "pending" }
-];
+type ChildRecord = {
+  _id: string;
+  name: string;
+  email: string;
+  classSection?: string;
+  department?: string;
+  admissionNo?: string;
+  semester?: string;
+  course?: string;
+  hostelStatus?: boolean;
+  roomNumber?: string;
+};
+
+type OutpassRow = {
+  id: string;
+  student: string;
+  reason: string;
+};
 
 export default function ParentDashboardPage() {
   const { role, isLoaded } = useRoleGuard("parent");
+  const { user } = useAuth();
   const { request } = useApi();
-  const [records, setRecords] = useState(pendingOutpasses);
+  const [child, setChild] = useState<ChildRecord | null>(null);
+  const [records, setRecords] = useState<OutpassRow[]>([]);
 
-  if (!isLoaded || !role) return null;
+  useEffect(() => {
+    if (!isLoaded || !role || !user) return;
+    const loadChild = async () => {
+      try {
+        const payload = await request<{ data: ChildRecord[] }>({
+          method: "GET",
+          url: `/users?role=student&parentEmail=${encodeURIComponent(user.email)}`
+        });
+        if (payload?.data && payload.data.length > 0) {
+          setChild(payload.data[0]);
+        }
+      } catch (error) {
+        console.error("Failed to load child for parent", error);
+      }
+    };
+    void loadChild();
+  }, [isLoaded, role, user, request]);
+
+  if (!isLoaded || !role || !user) return null;
 
   return (
     <RoleLayout
       role="parent"
       title="Parent Overview"
-      subtitle="Approve or reject outpasses. Buttons hit PUT /api/outpass/:id/parent-approve."
+      subtitle="See your child's profile and approve outpasses."
     >
       <Card title="Child Snapshot">
-        <div className="grid gap-4 sm:grid-cols-3 text-sm">
-          <div>
-            <p className="text-muted-foreground">Attendance</p>
-            <p className="text-2xl font-semibold">91%</p>
+        {child ? (
+          <StudentProfileCard
+            profile={{
+              name: child.name,
+              email: child.email,
+              admissionNo: child.admissionNo,
+              semester: child.semester,
+              course: child.course,
+              department: child.department,
+              classSection: child.classSection,
+              hostelStatus: child.hostelStatus,
+              roomNumber: child.roomNumber
+            }}
+          />
+        ) : (
+          <div className="py-4 text-xs text-muted-foreground">
+            No mapped child found. Ensure the student's parent email matches your login email.
           </div>
-          <div>
-            <p className="text-muted-foreground">Fee Status</p>
-            <p className="text-2xl font-semibold text-success">Cleared</p>
-          </div>
-          <div>
-            <p className="text-muted-foreground">Hostel Room</p>
-            <p className="text-2xl font-semibold">H-203</p>
-          </div>
-        </div>
+        )}
       </Card>
       <Card title="Pending Outpasses" subtitle="Approve → notify student + warden">
         <DataTable

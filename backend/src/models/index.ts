@@ -17,4 +17,5 @@ export * from "./announcement.model";
 export * from "./securityLog.model";
 export * from "./adminLog.model";
 export * from "./token.model";
+export * from "./fee.model";
 

@@ -19,8 +19,20 @@ export type AuthUser = {
   email: string;
   role: UserRole;
   collegeId: string;
+  phone?: string;
   department?: string;
   classSection?: string;
+  hostelStatus?: boolean;
+  roomNumber?: string;
+  admissionNo?: string;
+  admissionYear?: string;
+  rollNo?: string;
+  degree?: string;
+  semester?: string;
+  course?: string;
+  collegeName?: string;
+  guardianPhone?: string;
+  address?: string;
 };
 
 type AuthContextValue = {
