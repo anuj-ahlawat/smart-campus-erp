@@ -1,4 +1,4 @@
-import jwt from "jsonwebtoken";
+import jwt, { type Secret, type SignOptions } from "jsonwebtoken";
 import { env } from "../config/env";
 import type { UserDocument } from "../models";
 
@@ -19,7 +19,8 @@ export const signAccessToken = (user: UserDocument) => {
     tokenVersion: user.refreshTokenVersion ?? 0
   };
 
-  return jwt.sign(payload, env.jwtSecret, { expiresIn: env.jwtExpiresIn });
+  const options: SignOptions = { expiresIn: env.jwtExpiresIn as any };
+  return jwt.sign(payload, env.jwtSecret as Secret, options as any);
 };
 
 export const signRefreshToken = (user: UserDocument) => {
@@ -31,11 +32,10 @@ export const signRefreshToken = (user: UserDocument) => {
     tokenVersion: user.refreshTokenVersion ?? 0
   };
 
-  return jwt.sign(payload, env.refreshSecret, { expiresIn: env.refreshExpiresIn });
+  const options: SignOptions = { expiresIn: env.refreshExpiresIn as any };
+  return jwt.sign(payload, env.refreshSecret as Secret, options as any);
 };
 
 export const verifyAccessToken = (token: string) => jwt.verify(token, env.jwtSecret) as TokenPayload;
 export const verifyRefreshToken = (token: string) =>
   jwt.verify(token, env.refreshSecret) as TokenPayload;
-
-

@@ -105,7 +105,23 @@ export const updateCurrentUser = asyncHandler(async (req: AuthRequest, res) => {
     });
   }
 
-  const allowedFields: Array<keyof typeof req.body> = [
+  type AllowedField =
+    | "name"
+    | "phone"
+    | "department"
+    | "classSection"
+    | "hostelStatus"
+    | "roomNumber"
+    | "degree"
+    | "course"
+    | "semester"
+    | "admissionNo"
+    | "admissionYear"
+    | "rollNo"
+    | "guardianPhone"
+    | "address";
+
+  const allowedFields: AllowedField[] = [
     "name",
     "phone",
     "department",
@@ -122,10 +138,11 @@ export const updateCurrentUser = asyncHandler(async (req: AuthRequest, res) => {
     "address"
   ];
 
-  const updatePayload: Record<string, unknown> = {};
+  const updatePayload: Partial<Record<AllowedField, unknown>> = {};
   for (const field of allowedFields) {
-    if (field in req.body) {
-      updatePayload[field] = (req.body as Record<string, unknown>)[field];
+    if (Object.prototype.hasOwnProperty.call(req.body, field)) {
+      (updatePayload as Record<string, unknown>)[field] =
+        (req.body as Record<string, unknown>)[field];
     }
   }
 
