@@ -1,6 +1,6 @@
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
-import { PATH_ROLE_MATRIX, PROTECTED_ROUTE_MATCHERS } from "@/src/lib/routes";
+import { PATH_ROLE_MATRIX } from "@/src/lib/routes";
 import type { UserRole } from "@/types/roles";
 
 const ROLE_COOKIE = "campus_role";
@@ -33,6 +33,14 @@ export function middleware(req: NextRequest) {
 }
 
 export const config = {
-  matcher: PROTECTED_ROUTE_MATCHERS
+  matcher: [
+    "/admin/:path*",
+    "/student/:path*",
+    "/teacher/:path*",
+    "/parent/:path*",
+    "/warden/:path*",
+    "/staff/:path*",
+    "/cafeteria/:path*",
+    "/security/:path*"
+  ]
 };
-
