@@ -29,6 +29,7 @@ const userSchema = new Schema(
     guardianPhone: String,
     address: String,
     parentEmail: String,
+    teachingSubjects: [String],
     parentId: { type: Schema.Types.ObjectId, ref: "User" },
     inviteCodeUsed: { type: Schema.Types.ObjectId, ref: "InviteCode" },
     status: { type: String, enum: ["active", "inactive"], default: "active" },

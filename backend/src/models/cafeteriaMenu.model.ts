@@ -5,7 +5,8 @@ const itemSchema = new Schema(
     itemId: { type: String, required: true },
     name: String,
     price: Number,
-    available: { type: Boolean, default: true }
+    available: { type: Boolean, default: true },
+    mealType: { type: String, enum: ["breakfast", "lunch", "dinner", "snack"], required: true }
   },
   { _id: false }
 );

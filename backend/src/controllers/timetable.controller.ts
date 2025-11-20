@@ -13,12 +13,23 @@ export const createSlot = asyncHandler(async (req: AuthRequest, res: Response) =
 });
 
 export const listSlots = asyncHandler(async (req: AuthRequest, res: Response) => {
-  const { classSection } = req.query;
+  const { classSection, teacherId } = req.query;
   const filter: Record<string, unknown> = { collegeId: req.authUser?.collegeId };
+
   if (classSection) {
     filter.classSection = classSection;
   }
-  const slots = await TimetableModel.find(filter).sort({ dayOfWeek: 1, startTime: 1 });
+
+  // For teachers, default to their own timetable unless admin explicitly filters by teacherId
+  if (req.authUser?.role === "teacher") {
+    filter.teacherId = req.authUser.id;
+  } else if (teacherId) {
+    filter.teacherId = teacherId;
+  }
+
+  const slots = await TimetableModel.find(filter)
+    .sort({ dayOfWeek: 1, startTime: 1 })
+    .populate("teacherId", "name email");
   res.json({ status: StatusCodes.OK, data: slots });
 });
 

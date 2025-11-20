@@ -48,11 +48,12 @@ export const ROLE_NAV_LINKS: Record<
   admin: [
     { label: "Dashboard", href: "/admin/dashboard" },
     { label: "Users", href: "/admin/users" },
-    { label: "Attendance", href: "/admin/attendance" },
+    { label: "Students", href: "/admin/student-list" },
     { label: "Events", href: "/admin/events" },
     { label: "Results", href: "/admin/results" },
     { label: "Fees", href: "/admin/fees" },
-    { label: "Settings", href: "/admin/settings" }
+    { label: "Courses", href: "/admin/courses" },
+    { label: "Timetable", href: "/admin/timetable" }
   ],
   student: [
     { label: "Dashboard", href: "/student/dashboard" },
@@ -60,14 +61,14 @@ export const ROLE_NAV_LINKS: Record<
     { label: "Outpass", href: "/student/outpass" },
     { label: "Results", href: "/student/results" },
     { label: "Events", href: "/student/events" },
-    { label: "Notes", href: "/student/notes" },
     { label: "Timetable", href: "/student/timetable" },
     { label: "Cafeteria", href: "/student/cafeteria" }
   ],
   teacher: [
     { label: "Dashboard", href: "/teacher/dashboard" },
     { label: "Attendance", href: "/teacher/attendance" },
-    { label: "Notes", href: "/teacher/notes" },
+    { label: "Timetable", href: "/teacher/timetable" },
+    { label: "Events", href: "/teacher/events" },
     { label: "Results", href: "/teacher/results" }
   ],
   parent: [

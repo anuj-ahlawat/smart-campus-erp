@@ -54,6 +54,29 @@ export default function ParentDashboardPage() {
     void loadChild();
   }, [isLoaded, role, user, request]);
 
+  useEffect(() => {
+    if (!child) return;
+    const loadOutpasses = async () => {
+      try {
+        const payload = await request<{ data: any[] }>({
+          method: "GET",
+          url: `/outpass/student/${child._id}`
+        });
+        const rows: OutpassRow[] = (payload?.data || [])
+          .filter((item) => item.parentApproval === "pending")
+          .map((item) => ({
+            id: item._id,
+            student: child.name,
+            reason: item.reason ?? "-"
+          }));
+        setRecords(rows);
+      } catch (error) {
+        console.error("Failed to load pending outpasses for parent", error);
+      }
+    };
+    void loadOutpasses();
+  }, [child, request]);
+
   if (!isLoaded || !role || !user) return null;
 
   return (

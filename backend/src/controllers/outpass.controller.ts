@@ -62,26 +62,53 @@ export const listPendingForWarden = asyncHandler(async (req: AuthRequest, res: R
   res.json({ status: StatusCodes.OK, data: docs });
 });
 
-const updateStatus = async (id: string, status: string, field: string) => {
-  const outpass = await OutpassModel.findById(id);
-  if (!outpass) throw new Error("Outpass not found");
-  (outpass as unknown as Record<string, unknown>)[field] = status;
-  if (status === "approved") {
+const recomputeOverallStatus = (outpass: any) => {
+  const parent = outpass.parentApproval;
+  const warden = outpass.wardenApproval;
+
+  if (parent === "rejected" || warden === "rejected") {
+    outpass.status = "rejected";
+  } else if (parent === "approved" && warden === "approved") {
     outpass.status = "approved";
+  } else {
+    outpass.status = "pending";
   }
-  await outpass.save();
-  io.emit("outpassStatusChanged", { id: outpass._id, status: outpass.status });
-  return outpass;
 };
 
 export const parentDecision = asyncHandler(async (req: AuthRequest, res: Response) => {
-  const record = await updateStatus(req.params.id, req.body.decision, "parentApproval");
-  res.json({ status: StatusCodes.OK, data: record });
+  const decision = req.body.decision as string;
+  const outpass = await OutpassModel.findById(req.params.id);
+  if (!outpass) {
+    return res.status(StatusCodes.NOT_FOUND).json({
+      status: StatusCodes.NOT_FOUND,
+      code: "OUTPASS_NOT_FOUND",
+      message: "Outpass not found"
+    });
+  }
+
+  outpass.parentApproval = decision as any;
+  recomputeOverallStatus(outpass);
+  await outpass.save();
+  io.emit("outpassStatusChanged", { id: outpass._id, status: outpass.status });
+  res.json({ status: StatusCodes.OK, data: outpass });
 });
 
 export const wardenDecision = asyncHandler(async (req: AuthRequest, res: Response) => {
-  const record = await updateStatus(req.params.id, req.body.decision, "wardenApproval");
-  res.json({ status: StatusCodes.OK, data: record });
+  const decision = req.body.decision as string;
+  const outpass = await OutpassModel.findById(req.params.id);
+  if (!outpass) {
+    return res.status(StatusCodes.NOT_FOUND).json({
+      status: StatusCodes.NOT_FOUND,
+      code: "OUTPASS_NOT_FOUND",
+      message: "Outpass not found"
+    });
+  }
+
+  outpass.wardenApproval = decision as any;
+  recomputeOverallStatus(outpass);
+  await outpass.save();
+  io.emit("outpassStatusChanged", { id: outpass._id, status: outpass.status });
+  res.json({ status: StatusCodes.OK, data: outpass });
 });
 
 export const adminOverride = asyncHandler(async (req: AuthRequest, res: Response) => {

@@ -15,30 +15,48 @@ export const Scanner = ({ onScan }: Props) => {
 
   useEffect(() => {
     if (!videoRef.current) return;
+    if (typeof navigator === "undefined" || !navigator.mediaDevices?.enumerateDevices) {
+      return;
+    }
+
     const reader = new BrowserMultiFormatReader();
-    reader
-      .listVideoInputDevices()
-      .then((devices) => {
-        if (!devices.length) throw new Error("No camera available");
+
+    const startScanner = async () => {
+      try {
+        const devices = await navigator.mediaDevices.enumerateDevices();
+        const videoDevices = devices.filter((d) => d.kind === "videoinput");
+        if (!videoDevices.length) {
+          throw new Error("No camera available");
+        }
+
+        const deviceId = videoDevices[0].deviceId;
         setIsScanning(true);
-        return reader.decodeFromVideoDevice(
-          devices[0].deviceId,
+
+        await reader.decodeFromVideoDevice(
+          deviceId,
           videoRef.current!,
           async (result, error) => {
             if (result) {
               setIsScanning(false);
-              reader.reset();
               await onScan(result.getText());
             }
             if (error) {
-              // ignore frame errors
+              // ignore frame errors for individual frames
             }
           }
         );
-      })
-      .catch((error) => handleApiErrors(error))
-      .finally(() => setIsScanning(false));
-    return () => reader.reset();
+      } catch (error) {
+        handleApiErrors(error);
+        setIsScanning(false);
+      }
+    };
+
+    void startScanner();
+
+    return () => {
+      // In this version of @zxing/browser BrowserMultiFormatReader does not expose a reset method.
+      // Decode stream will be stopped automatically when the component unmounts.
+    };
   }, [onScan]);
 
   return (

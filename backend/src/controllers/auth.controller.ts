@@ -96,6 +96,80 @@ export const registerCollege = asyncHandler(async (req, res) => {
   });
 });
 
+export const updateCurrentUser = asyncHandler(async (req: AuthRequest, res) => {
+  if (!req.authUser) {
+    return res.status(StatusCodes.UNAUTHORIZED).json({
+      status: StatusCodes.UNAUTHORIZED,
+      code: "AUTH_REQUIRED",
+      message: "Authentication required"
+    });
+  }
+
+  const allowedFields: Array<keyof typeof req.body> = [
+    "name",
+    "phone",
+    "department",
+    "classSection",
+    "hostelStatus",
+    "roomNumber",
+    "degree",
+    "course",
+    "semester",
+    "admissionNo",
+    "admissionYear",
+    "rollNo",
+    "guardianPhone",
+    "address"
+  ];
+
+  const updatePayload: Record<string, unknown> = {};
+  for (const field of allowedFields) {
+    if (field in req.body) {
+      updatePayload[field] = (req.body as Record<string, unknown>)[field];
+    }
+  }
+
+  const user = await UserModel.findByIdAndUpdate(req.authUser.id, updatePayload, { new: true }).select(
+    "name email role phone collegeId department classSection hostelStatus roomNumber status isEmailVerified admissionNo admissionYear rollNo degree semester course collegeName guardianPhone address"
+  );
+
+  if (!user) {
+    return res.status(StatusCodes.NOT_FOUND).json({
+      status: StatusCodes.NOT_FOUND,
+      code: "USER_NOT_FOUND",
+      message: "Unable to update profile"
+    });
+  }
+
+  return res.json({
+    status: StatusCodes.OK,
+    code: "AUTH_ME_UPDATED",
+    data: {
+      id: user._id.toString(),
+      name: user.name,
+      email: user.email,
+      role: user.role,
+      phone: user.phone,
+      collegeId: user.collegeId.toString(),
+      department: user.department,
+      classSection: user.classSection,
+      hostelStatus: user.hostelStatus,
+      roomNumber: user.roomNumber,
+      admissionNo: user.admissionNo,
+      admissionYear: user.admissionYear,
+      rollNo: user.rollNo,
+      degree: user.degree,
+      semester: user.semester,
+      course: user.course,
+      collegeName: user.collegeName,
+      guardianPhone: user.guardianPhone,
+      address: user.address,
+      status: user.status,
+      isEmailVerified: user.isEmailVerified
+    }
+  });
+});
+
 export const verifyEmail = asyncHandler(async (req, res) => {
   // Email verification is disabled - just return success for backward compatibility
   // If a token is provided, mark it as consumed if it exists

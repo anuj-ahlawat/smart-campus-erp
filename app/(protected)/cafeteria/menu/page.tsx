@@ -9,14 +9,15 @@ import { useApi } from "@/hooks/useApi";
 import { useRoleGuard } from "@/hooks/useRoleGuard";
 import type { UserRole } from "@/types/roles";
 
-type MenuItem = { name: string; price: number; available: boolean };
+type MealType = "breakfast" | "lunch" | "dinner" | "snack";
+type MenuItem = { name: string; price: number; available: boolean; mealType: MealType };
 
 export default function CafeteriaMenuPage() {
   const { role, isLoaded } = useRoleGuard(["cafeteria", "staff"]);
   const { request } = useApi();
   const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
   const [items, setItems] = useState<MenuItem[]>([
-    { name: "Paneer Bowl", price: 80, available: true }
+    { name: "Paneer Bowl", price: 80, available: true, mealType: "lunch" }
   ]);
 
   const publishMenu = async () => {
@@ -49,10 +50,34 @@ export default function CafeteriaMenuPage() {
           onChange={(event) => setDate(event.target.value)}
         />
       </Card>
-      <Card title="Items">
+      <Card title="Items" subtitle="Mark each dish as Breakfast, Lunch, Snack or Dinner and publish for students.">
         <DataTable
           data={items}
           columns={[
+            {
+              key: "mealType",
+              header: "Meal",
+              render: (row, index) => (
+                <select
+                  className="w-28 rounded-md border border-border bg-transparent p-1 text-xs"
+                  value={row.mealType}
+                  onChange={(event) =>
+                    setItems((prev) =>
+                      prev.map((item, idx) =>
+                        idx === index
+                          ? { ...item, mealType: event.target.value as MealType }
+                          : item
+                      )
+                    )
+                  }
+                >
+                  <option value="breakfast">Breakfast</option>
+                  <option value="lunch">Lunch</option>
+                  <option value="snack">Snack</option>
+                  <option value="dinner">Dinner</option>
+                </select>
+              )
+            },
             { key: "name", header: "Item" },
             {
               key: "price",
@@ -90,7 +115,12 @@ export default function CafeteriaMenuPage() {
         <Button
           variant="outline"
           className="mt-4"
-          onClick={() => setItems((prev) => [...prev, { name: "New Item", price: 0, available: true }])}
+          onClick={() =>
+            setItems((prev) => [
+              ...prev,
+              { name: "New Item", price: 0, available: true, mealType: "lunch" }
+            ])
+          }
         >
           Add Item
         </Button>

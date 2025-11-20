@@ -7,7 +7,9 @@ const timetableSchema = new Schema(
     dayOfWeek: { type: Number, required: true, min: 0, max: 6 },
     startTime: { type: String, required: true },
     endTime: { type: String, required: true },
-    subjectId: { type: Schema.Types.ObjectId, ref: "Subject", required: true },
+    // Store course/subject identifier as a string (e.g. course code) so admin timetable
+    // can reference the same codes used in the Courses API without needing a Subject doc.
+    subjectId: { type: String, required: true },
     teacherId: { type: Schema.Types.ObjectId, ref: "User", required: true },
     room: String
   },

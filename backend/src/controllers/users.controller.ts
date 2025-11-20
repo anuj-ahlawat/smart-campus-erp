@@ -19,7 +19,7 @@ const ensureAuth = (req: AuthRequest, res: Response) => {
 
 export const listUsers = asyncHandler(async (req: AuthRequest, res: Response) => {
   if (!ensureAuth(req, res)) return;
-  const { role, department, hostelStatus, parentEmail } = req.query;
+  const { role, department, hostelStatus, parentEmail, classSection, course } = req.query;
   const filter: Record<string, unknown> = {
     collegeId: req.authUser!.collegeId,
     status: { $ne: "inactive" }
@@ -28,6 +28,12 @@ export const listUsers = asyncHandler(async (req: AuthRequest, res: Response) =>
   if (department) filter.department = department;
   if (hostelStatus !== undefined) filter.hostelStatus = hostelStatus === "true";
   if (parentEmail) filter.parentEmail = parentEmail;
+  if (classSection) {
+    const raw = String(classSection);
+    const escaped = raw.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    filter.classSection = new RegExp(`^${escaped}$`, "i");
+  }
+  if (course) filter.course = course;
   const users = await UserModel.find(filter)
     .select("-passwordHash")
     .sort({ createdAt: -1 });
@@ -53,12 +59,35 @@ export const getUser = asyncHandler(async (req: AuthRequest, res: Response) => {
 export const createUser = asyncHandler(async (req: AuthRequest, res: Response) => {
   if (!ensureAuth(req, res)) return;
   const { password, ...rest } = req.body;
+  const passwordHash = await hashPassword(password);
+
   const payload = {
     ...rest,
     collegeId: req.authUser!.collegeId,
-    passwordHash: await hashPassword(password)
+    passwordHash
   };
+
   const user = await UserModel.create(payload);
+
+  // If this is a student with a parentEmail, auto-provision a parent account
+  if (rest.role === "student" && rest.parentEmail) {
+    const existingParent = await UserModel.findOne({
+      collegeId: req.authUser!.collegeId,
+      email: rest.parentEmail,
+      role: "parent"
+    });
+
+    if (!existingParent) {
+      await UserModel.create({
+        collegeId: req.authUser!.collegeId,
+        name: rest.name ? `${rest.name}'s Parent` : "Parent",
+        email: rest.parentEmail,
+        role: "parent",
+        passwordHash
+      });
+    }
+  }
+
   res.status(StatusCodes.CREATED).json({ status: StatusCodes.CREATED, data: user });
 });
 

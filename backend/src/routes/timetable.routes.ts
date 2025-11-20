@@ -7,12 +7,16 @@ import { timetableSchema } from "../validations/schedule.validation";
 
 const router = Router();
 
-router.use(requireAuth, roleGuard(["admin", "teacher"]));
+// All timetable routes require auth. Read access is wider than write access.
+router.use(requireAuth);
 
-router.get("/", listSlots);
-router.post("/", validate(timetableSchema), createSlot);
-router.put("/:id", updateSlot);
-router.delete("/:id", deleteSlot);
+// Allow admin, teacher, and student to view timetable slots.
+router.get("/", roleGuard(["admin", "teacher", "student"]), listSlots);
+
+// Creation and mutations restricted to admin/teacher as before.
+router.post("/", roleGuard(["admin", "teacher"]), validate(timetableSchema), createSlot);
+router.put("/:id", roleGuard(["admin", "teacher"]), updateSlot);
+router.delete("/:id", roleGuard(["admin", "teacher"]), deleteSlot);
 
 export default router;
 

@@ -18,9 +18,12 @@ type UserRecord = {
   name: string;
   role: UserRole;
   department?: string;
+  classSection?: string;
   hostelStatus?: boolean;
   roomNumber?: string;
   email?: string;
+  phone?: string;
+  parentEmail?: string;
   hostel?: string;
 };
 
@@ -31,6 +34,17 @@ export default function AdminUsersPage() {
   const [loading, setLoading] = useState(true);
   const [selectedUser, setSelectedUser] = useState<UserRecord | null>(null);
   const [selectedRole, setSelectedRole] = useState<UserRole>("student");
+  const [editUser, setEditUser] = useState<UserRecord | null>(null);
+  const [editForm, setEditForm] = useState({
+    name: "",
+    email: "",
+    phone: "",
+    department: "",
+    classSection: "",
+    hostelStatus: false,
+    roomNumber: "",
+    parentEmail: ""
+  });
   const [activeRoleTab, setActiveRoleTab] = useState<UserRole | "all">("student");
   const [addOpen, setAddOpen] = useState(false);
   const [newUser, setNewUser] = useState({
@@ -50,6 +64,40 @@ export default function AdminUsersPage() {
     subject: "",
     staffDepartment: ""
   });
+  const [courses, setCourses] = useState<{ code: string; title: string; semester: number }[]>([]);
+
+  useEffect(() => {
+    if (!isLoaded || !role) return;
+    const loadCourses = async () => {
+      try {
+        const payload = await request<{ data: { code: string; title: string; semester: number }[] }>({
+          method: "GET",
+          url: "/courses"
+        });
+        setCourses(payload?.data ?? []);
+      } catch (error) {
+        console.error("Failed to load courses", error);
+      }
+    };
+    void loadCourses();
+  }, [isLoaded, role, request]);
+
+  // When creating a teacher, if no teachingSubjects are chosen yet, pre-select up to 3 random subjects
+  useEffect(() => {
+    const teachingSubjects = ((newUser as any).teachingSubjects as string[] | undefined) ?? [];
+    if (newUser.role !== "teacher") return;
+    if (teachingSubjects.length) return;
+    if (!courses.length) return;
+
+    const pool = courses.filter((c) => c.semester >= 1 && c.semester <= 5);
+    if (!pool.length) return;
+
+    const shuffled = [...pool].sort(() => Math.random() - 0.5);
+    const picked = shuffled.slice(0, Math.min(3, shuffled.length)).map((c) => c.code);
+    if (!picked.length) return;
+
+    setNewUser((prev) => ({ ...(prev as any), teachingSubjects: picked } as any));
+  }, [newUser.role, courses]);
 
   const fetchUsers = async (roleFilter: UserRole | "all") => {
     try {
@@ -108,8 +156,17 @@ export default function AdminUsersPage() {
       if (newUser.department) payload.department = newUser.department;
       if (newUser.classSection) payload.classSection = newUser.classSection;
       if (newUser.subject) payload.subject = newUser.subject;
+      if (Array.isArray((newUser as any).teachingSubjects) && (newUser as any).teachingSubjects.length) {
+        payload.teachingSubjects = (newUser as any).teachingSubjects;
+      }
     } else if (newUser.role === "staff") {
-      if (newUser.staffDepartment) {
+      // Route specialised staff to the right portal by setting their role
+      if (newUser.staffDepartment === "cafeteria") {
+        payload.role = "cafeteria";
+      } else if (newUser.staffDepartment === "security") {
+        payload.role = "security";
+      } else if (newUser.staffDepartment) {
+        // e.g. laundry or other support staff stay under generic staff role
         payload.department = newUser.staffDepartment;
       }
     } else if (newUser.role === "warden") {
@@ -153,6 +210,25 @@ export default function AdminUsersPage() {
         header: "Actions",
         render: (row: UserRecord) => (
           <div className="flex gap-2">
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => {
+                setEditUser(row);
+                setEditForm({
+                  name: row.name,
+                  email: row.email ?? "",
+                  phone: row.phone ?? "",
+                  department: row.department ?? "",
+                  classSection: row.classSection ?? "",
+                  hostelStatus: row.hostelStatus ?? false,
+                  roomNumber: row.roomNumber ?? "",
+                  parentEmail: row.parentEmail ?? ""
+                });
+              }}
+            >
+              Edit Profile
+            </Button>
             <Button
               size="sm"
               onClick={() => {
@@ -281,6 +357,161 @@ export default function AdminUsersPage() {
       </Modal>
 
       <Modal
+        title={`Edit Profile  ${editUser?.name ?? ""}`}
+        description="PUT /api/users/:id updates core user profile fields."
+        open={Boolean(editUser)}
+        onOpenChange={(open) => {
+          if (!open) setEditUser(null);
+        }}
+      >
+        {editUser && (
+          <div className="space-y-3 text-xs">
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block mb-1 font-medium">Name</label>
+                <input
+                  className="w-full rounded-md border border-border bg-background px-2 py-1"
+                  value={editForm.name}
+                  onChange={(e) => setEditForm((prev) => ({ ...prev, name: e.target.value }))}
+                />
+              </div>
+              <div>
+                <label className="block mb-1 font-medium">Email</label>
+                <input
+                  className="w-full rounded-md border border-border bg-background px-2 py-1"
+                  value={editForm.email}
+                  onChange={(e) => setEditForm((prev) => ({ ...prev, email: e.target.value }))}
+                />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block mb-1 font-medium">Phone</label>
+                <input
+                  className="w-full rounded-md border border-border bg-background px-2 py-1"
+                  value={editForm.phone}
+                  onChange={(e) => setEditForm((prev) => ({ ...prev, phone: e.target.value }))}
+                />
+              </div>
+              <div>
+                <label className="block mb-1 font-medium">Parent email</label>
+                <input
+                  className="w-full rounded-md border border-border bg-background px-2 py-1"
+                  value={editForm.parentEmail}
+                  onChange={(e) =>
+                    setEditForm((prev) => ({ ...prev, parentEmail: e.target.value }))
+                  }
+                />
+              </div>
+            </div>
+            <div className="grid grid-cols-3 gap-3">
+              <div>
+                <label className="block mb-1 font-medium">Department</label>
+                <input
+                  className="w-full rounded-md border border-border bg-background px-2 py-1"
+                  value={editForm.department}
+                  onChange={(e) =>
+                    setEditForm((prev) => ({ ...prev, department: e.target.value }))
+                  }
+                />
+              </div>
+              <div>
+                <label className="block mb-1 font-medium">Class / Section</label>
+                <input
+                  className="w-full rounded-md border border-border bg-background px-2 py-1"
+                  value={editForm.classSection}
+                  onChange={(e) =>
+                    setEditForm((prev) => ({ ...prev, classSection: e.target.value }))
+                  }
+                />
+              </div>
+              <div>
+                <label className="block mb-1 font-medium">Hosteller</label>
+                <select
+                  className="w-full rounded-md border border-border bg-background px-2 py-1"
+                  value={editForm.hostelStatus ? "yes" : "no"}
+                  onChange={(e) =>
+                    setEditForm((prev) => ({ ...prev, hostelStatus: e.target.value === "yes" }))
+                  }
+                >
+                  <option value="no">No</option>
+                  <option value="yes">Yes</option>
+                </select>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block mb-1 font-medium">Room number</label>
+                <input
+                  className="w-full rounded-md border border-border bg-background px-2 py-1"
+                  value={editForm.roomNumber}
+                  onChange={(e) =>
+                    setEditForm((prev) => ({ ...prev, roomNumber: e.target.value }))
+                  }
+                  disabled={!editForm.hostelStatus}
+                />
+              </div>
+            </div>
+            <div className="flex justify-end gap-2 pt-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setEditUser(null)}
+              >
+                Cancel
+              </Button>
+              <Button
+                size="sm"
+                onClick={async () => {
+                  if (!editUser) return;
+                  const payload: Record<string, unknown> = {
+                    name: editForm.name,
+                    email: editForm.email,
+                    phone: editForm.phone,
+                    department: editForm.department,
+                    classSection: editForm.classSection,
+                    hostelStatus: editForm.hostelStatus,
+                    parentEmail: editForm.parentEmail
+                  };
+                  if (editForm.hostelStatus && editForm.roomNumber) {
+                    payload.roomNumber = editForm.roomNumber;
+                  } else {
+                    payload.roomNumber = "";
+                  }
+
+                  const response = await request<{ data: UserRecord }>({
+                    method: "PUT",
+                    url: `/users/${editUser.id || editUser._id}`,
+                    data: payload
+                  });
+                  const updated = response?.data;
+                  if (updated) {
+                    setRecords((prev) =>
+                      prev.map((u) =>
+                        (u.id || u._id) === (editUser.id || editUser._id)
+                          ? {
+                              ...u,
+                              ...updated,
+                              id: updated._id || updated.id,
+                              hostel: updated.hostelStatus
+                                ? updated.roomNumber || "Yes"
+                                : "No"
+                            }
+                          : u
+                      )
+                    );
+                  }
+                  setEditUser(null);
+                }}
+              >
+                Save changes
+              </Button>
+            </div>
+          </div>
+        )}
+      </Modal>
+
+      <Modal
         title="Add User"
         description="Create a new user account for this college. A login password will be saved for the selected role."
         open={addOpen}
@@ -359,26 +590,89 @@ export default function AdminUsersPage() {
             </div>
           )}
           {newUser.role === "teacher" && (
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="block text-xs font-medium mb-1">Department</label>
-                <input
-                  className="w-full rounded-md border border-border bg-background px-2 py-1 text-xs"
-                  value={newUser.department}
-                  onChange={(event) =>
-                    setNewUser((prev) => ({ ...prev, department: event.target.value }))
-                  }
-                />
+            <div className="space-y-3">
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-medium mb-1">Department</label>
+                  <input
+                    className="w-full rounded-md border border-border bg-background px-2 py-1 text-xs"
+                    value={newUser.department}
+                    onChange={(event) =>
+                      setNewUser((prev) => ({ ...prev, department: event.target.value }))
+                    }
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium mb-1">Subject (short label)</label>
+                  <input
+                    className="w-full rounded-md border border-border bg-background px-2 py-1 text-xs"
+                    value={newUser.subject}
+                    onChange={(event) =>
+                      setNewUser((prev) => ({ ...prev, subject: event.target.value }))
+                    }
+                  />
+                </div>
               </div>
               <div>
-                <label className="block text-xs font-medium mb-1">Subject</label>
-                <input
-                  className="w-full rounded-md border border-border bg-background px-2 py-1 text-xs"
-                  value={newUser.subject}
-                  onChange={(event) =>
-                    setNewUser((prev) => ({ ...prev, subject: event.target.value }))
-                  }
-                />
+                <label className="block text-xs font-medium mb-1">Teaching subjects (choose up to 3 from Sem 1-5)</label>
+                <div className="w-full rounded-md border border-border bg-background px-2 py-1 text-xs h-28 overflow-y-auto space-y-1">
+                  {courses
+                    .filter((c) => c.semester >= 1 && c.semester <= 5)
+                    .map((course) => {
+                      const selected = (((newUser as any).teachingSubjects as string[]) ?? []).includes(
+                        course.code
+                      );
+                      const currentSelected =
+                        (((newUser as any).teachingSubjects as string[]) ?? []).length || 0;
+                      const disableNewCheck = !selected && currentSelected >= 3;
+                      return (
+                        <label key={course.code} className="flex items-start gap-1">
+                          <input
+                            type="checkbox"
+                            className="mt-[2px]"
+                            checked={selected}
+                            disabled={disableNewCheck}
+                            onChange={(event) => {
+                              const prevSelected =
+                                (((newUser as any).teachingSubjects as string[]) ?? []);
+                              if (event.target.checked) {
+                                if (prevSelected.includes(course.code)) return;
+                                if (prevSelected.length >= 3) return;
+                                setNewUser((prev) =>
+                                  ({
+                                    ...(prev as any),
+                                    teachingSubjects: [...prevSelected, course.code]
+                                  } as any)
+                                );
+                              } else {
+                                setNewUser((prev) =>
+                                  ({
+                                    ...(prev as any),
+                                    teachingSubjects: prevSelected.filter((c) => c !== course.code)
+                                  } as any)
+                                );
+                              }
+                            }}
+                          />
+                          <span>{`${course.code} (Sem ${course.semester}) — ${course.title}`}</span>
+                        </label>
+                      );
+                    })}
+                </div>
+                <p className="mt-1 text-[10px] text-muted-foreground">Select up to 3 subjects using the checkboxes above.</p>
+                {((newUser as any).teachingSubjects as string[] | undefined)?.length ? (
+                  <div className="mt-2 space-y-1">
+                    <p className="text-[11px] font-medium">Selected subjects:</p>
+                    <ul className="text-[11px] list-disc list-inside space-y-0.5">
+                      {((newUser as any).teachingSubjects as string[]).map((code) => {
+                        const course = courses.find((c) => c.code === code);
+                        return (
+                          <li key={code}>{course ? `${course.code} (Sem ${course.semester}) — ${course.title}` : code}</li>
+                        );
+                      })}
+                    </ul>
+                  </div>
+                ) : null}
               </div>
             </div>
           )}

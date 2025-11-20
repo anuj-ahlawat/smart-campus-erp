@@ -7,7 +7,8 @@ export const publishMenuSchema = z.object({
       z.object({
         name: z.string(),
         price: z.number(),
-        available: z.boolean().default(true)
+        available: z.boolean().default(true),
+        mealType: z.enum(["breakfast", "lunch", "dinner", "snack"])
       })
     )
   })

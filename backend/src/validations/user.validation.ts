@@ -9,7 +9,9 @@ const baseUserFields = {
   classSection: z.string().optional(),
   hostelStatus: z.boolean().optional(),
   roomNumber: z.string().optional(),
-  parentId: z.string().optional()
+  parentId: z.string().optional(),
+  parentEmail: z.string().email().optional(),
+  teachingSubjects: z.array(z.string()).max(3).optional()
 };
 
 export const createUserSchema = z.object({

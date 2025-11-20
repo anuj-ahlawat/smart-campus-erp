@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   ResponsiveContainer,
   BarChart,
@@ -17,63 +17,112 @@ import { RoleLayout } from "@/components/layout/RoleLayout";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useRoleGuard } from "@/hooks/useRoleGuard";
+import { useAuthContext } from "@/providers/auth-provider";
+import { useApi } from "@/hooks/useApi";
+
+type AttendanceRecord = {
+  _id: string;
+  studentId: string;
+  subjectId: string;
+  classSection: string;
+  classDate: string;
+  status: "present" | "absent" | "leave";
+};
+
+type SubjectStat = {
+  code: string;
+  name: string;
+  percentage: number;
+  meta: string;
+};
 
 const semesters = [
   {
-    id: "2025-26-sem5",
-    label: "2025-2026, Semester - 5, B.Tech (CSE)",
-    yearLabel: "Attendance % / 2025-2026"
-  },
-  {
-    id: "2024-25-sem4",
-    label: "2024-2025, Semester - 4, B.Tech (CSE)",
-    yearLabel: "Attendance % / 2024-2025"
+    id: "current",
+    label: "Current semester",
+    yearLabel: "Attendance % / Current"
   }
 ];
 
-const subjectAttendanceBySemester: Record<
-  string,
-  { code: string; name: string; percentage: number; meta: string }[]
-> = {
-  "2025-26-sem5": [
-    { code: "CSET301", name: "AI & ML", percentage: 88, meta: "CSET301 - 88% (17/19)" },
-    { code: "CSET302", name: "Automata Theory", percentage: 92, meta: "CSET302 - 92% (24/26)" },
-    { code: "CSET303", name: "Penetration Testing", percentage: 79, meta: "CSET303 - 79% (22/28)" },
-    { code: "CSET304", name: "Software Testing", percentage: 85, meta: "CSET304 - 85% (18/21)" },
-    { code: "CSET305", name: "Ethical Hacking", percentage: 91, meta: "CSET305 - 91% (20/22)" }
-  ],
-  "2024-25-sem4": [
-    { code: "CSET210", name: "Design Thinking", percentage: 93, meta: "CSET210 - 93% (26/28)" },
-    { code: "CSET227", name: "Network Security", percentage: 87, meta: "CSET227 - 87% (21/24)" },
-    { code: "CSET209", name: "Operating Systems", percentage: 90, meta: "CSET209 - 90% (27/30)" },
-    { code: "CSET207", name: "Computer Networks", percentage: 82, meta: "CSET207 - 82% (23/28)" }
-  ]
-};
-
-const overallAttendanceBySemester: Record<
-  string,
-  { percentage: number; present: number; total: number }
-> = {
-  "2025-26-sem5": { percentage: 88, present: 274, total: 311 },
-  "2024-25-sem4": { percentage: 92, present: 260, total: 283 }
-};
-
 export default function StudentAttendancePage() {
   const { role, isLoaded } = useRoleGuard("student");
+  const { user } = useAuthContext();
+  const { request } = useApi();
+
   const [selectedSemesterId, setSelectedSemesterId] = useState<string>(semesters[0]?.id ?? "");
   const [activeTab, setActiveTab] = useState<"subject" | "overall">("subject");
+  const [records, setRecords] = useState<AttendanceRecord[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  if (!isLoaded || !role) {
-    return null;
-  }
+  useEffect(() => {
+    const load = async () => {
+      if (!user?.id) return;
+      try {
+        setLoading(true);
+        const payload = await request<{ data: AttendanceRecord[] }>({
+          method: "GET",
+          url: `/attendance/student/${encodeURIComponent(user.id)}`
+        });
+        setRecords(payload?.data ?? []);
+      } catch (error) {
+        console.error("Failed to load attendance", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    if (isLoaded && role === "student") {
+      void load();
+    }
+  }, [isLoaded, role, request, user?.id]);
 
-  const overall = overallAttendanceBySemester[selectedSemesterId];
+  const subjectStats: SubjectStat[] = useMemo(() => {
+    if (!records.length) return [];
+    const bySubject: Record<string, { present: number; total: number }> = {};
+    for (const record of records) {
+      if (!bySubject[record.subjectId]) {
+        bySubject[record.subjectId] = { present: 0, total: 0 };
+      }
+      bySubject[record.subjectId].total += 1;
+      if (record.status === "present" || record.status === "leave") {
+        bySubject[record.subjectId].present += 1;
+      }
+    }
+    return Object.entries(bySubject).map(([subjectId, stats]) => {
+      const percentage = stats.total ? Math.round((stats.present / stats.total) * 100) : 0;
+      const meta = `${subjectId} - ${percentage}% (${stats.present}/${stats.total})`;
+      return {
+        code: subjectId,
+        name: subjectId,
+        percentage,
+        meta
+      } satisfies SubjectStat;
+    });
+  }, [records]);
+
+  const overall = useMemo(() => {
+    if (!records.length) return undefined;
+    let present = 0;
+    let total = 0;
+    for (const record of records) {
+      total += 1;
+      if (record.status === "present" || record.status === "leave") {
+        present += 1;
+      }
+    }
+    const percentage = total ? Math.round((present / total) * 100) : 0;
+    return { percentage, present, total };
+  }, [records]);
+
   const donutData: { name: string; value: number }[] = overall
     ? [
         { name: "Present", value: overall.percentage },
         { name: "Absent", value: 100 - overall.percentage }
       ]
     : [];
+
+  if (!isLoaded || !role || !user) {
+    return null;
+  }
 
   return (
     <RoleLayout
@@ -103,20 +152,18 @@ export default function StudentAttendancePage() {
             <div className="text-[11px] text-muted-foreground">Overall attendance (selected semester)</div>
             <div className="text-lg font-semibold">
               {(() => {
-                const data = subjectAttendanceBySemester[selectedSemesterId] ?? [];
-                if (!data.length) return "-";
-                const total = data.reduce((sum, item) => sum + item.percentage, 0);
-                const avg = Math.round(total / data.length);
+                if (!subjectStats.length) return "-";
+                const total = subjectStats.reduce((sum, item) => sum + item.percentage, 0);
+                const avg = Math.round(total / subjectStats.length);
                 return `${avg}%`;
               })()}
             </div>
           </div>
           <div className="text-right">
             {(() => {
-              const data = subjectAttendanceBySemester[selectedSemesterId] ?? [];
-              if (!data.length) return null;
-              const total = data.reduce((sum, item) => sum + item.percentage, 0);
-              const avg = Math.round(total / data.length);
+              if (!subjectStats.length) return null;
+              const total = subjectStats.reduce((sum, item) => sum + item.percentage, 0);
+              const avg = Math.round(total / subjectStats.length);
               const healthy = avg >= 75;
               return (
                 <span
@@ -156,39 +203,59 @@ export default function StudentAttendancePage() {
         </div>
 
         {activeTab === "subject" && (
-          <div className="h-72">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart
-                data={subjectAttendanceBySemester[selectedSemesterId] ?? []}
-                margin={{ left: -20, right: 10 }}
-              >
-                <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                <XAxis
-                  dataKey="code"
-                  tickLine={false}
-                  axisLine={false}
-                  tick={{ fontSize: 10 }}
-                  interval={0}
-                />
-                <YAxis
-                  tickLine={false}
-                  axisLine={false}
-                  tick={{ fontSize: 10 }}
-                  domain={[0, 100]}
-                  tickFormatter={(value) => `${value}%`}
-                />
-                <Tooltip
-                  formatter={(value: number, _name, payload) => [
-                    `${value}%`,
-                    (payload?.payload as { name?: string; meta?: string })?.name ?? "Attendance"
-                  ]}
-                  labelFormatter={(_label, payload) =>
-                    (payload?.[0]?.payload as { meta?: string })?.meta ?? ""
-                  }
-                />
-                <Bar dataKey="percentage" fill="#60a5fa" radius={[4, 4, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
+          <div>
+            <div className="h-72">
+              {loading ? (
+                <div className="flex h-full items-center justify-center text-xs text-muted-foreground">
+                  Loading attendance...
+                </div>
+              ) : !subjectStats.length ? (
+                <div className="flex h-full items-center justify-center text-xs text-muted-foreground">
+                  No attendance records available yet.
+                </div>
+              ) : (
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={subjectStats} margin={{ left: -20, right: 10 }}>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                    <XAxis
+                      dataKey="code"
+                      tickLine={false}
+                      axisLine={false}
+                      tick={{ fontSize: 10 }}
+                      interval={0}
+                    />
+                    <YAxis
+                      tickLine={false}
+                      axisLine={false}
+                      tick={{ fontSize: 10 }}
+                      domain={[0, 100]}
+                      tickFormatter={(value) => `${value}%`}
+                    />
+                    <Tooltip
+                      formatter={(value: number, _name, payload) => [
+                        `${value}%`,
+                        (payload?.payload as { name?: string; meta?: string })?.name ?? "Attendance"
+                      ]}
+                      labelFormatter={(_label, payload) =>
+                        (payload?.[0]?.payload as { meta?: string })?.meta ?? ""
+                      }
+                    />
+                    <Bar dataKey="percentage" fill="#60a5fa" radius={[4, 4, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              )}
+            </div>
+
+            {!loading && subjectStats.length > 0 && (
+              <div className="mt-4 grid gap-1 text-[11px] text-muted-foreground sm:grid-cols-2 md:grid-cols-3">
+                {subjectStats.map((subject) => (
+                  <div key={subject.code} className="flex items-center justify-between rounded border border-border/60 px-2 py-1">
+                    <span className="font-medium text-foreground">{subject.code}</span>
+                    <span>{subject.percentage}%</span>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         )}
 

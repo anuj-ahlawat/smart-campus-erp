@@ -1,15 +1,17 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { RoleLayout } from "@/components/layout/RoleLayout";
 import { Card } from "@/components/ui/card";
 import { DataTable } from "@/components/ui/table";
 import { useRoleGuard } from "@/hooks/useRoleGuard";
 import { useApi } from "@/hooks/useApi";
+import { useAuth } from "@/hooks/useAuth";
 
-type StudentRecord = {
+type ChildRecord = {
   _id: string;
   name: string;
+  email: string;
   classSection?: string;
 };
 
@@ -24,34 +26,38 @@ type ResultRow = {
 
 export default function ParentResultsPage() {
   const { role, isLoaded } = useRoleGuard("parent");
+  const { user } = useAuth();
   const { request } = useApi();
-  const [students, setStudents] = useState<StudentRecord[]>([]);
-  const [selectedStudentId, setSelectedStudentId] = useState("");
+  const [child, setChild] = useState<ChildRecord | null>(null);
   const [rows, setRows] = useState<ResultRow[]>([]);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    if (!isLoaded || !role) return;
-    const loadStudents = async () => {
-      const payload = await request<{ data: StudentRecord[] }>({
-        method: "GET",
-        url: "/users?role=student"
-      });
-      if (payload?.data) {
-        setStudents(payload.data);
+    if (!isLoaded || !role || !user) return;
+    const loadChild = async () => {
+      try {
+        const payload = await request<{ data: ChildRecord[] }>({
+          method: "GET",
+          url: `/users?role=student&parentEmail=${encodeURIComponent(user.email)}`
+        });
+        if (payload?.data && payload.data.length > 0) {
+          setChild(payload.data[0]);
+        }
+      } catch (error) {
+        console.error("Failed to load child for parent results", error);
       }
     };
-    void loadStudents();
-  }, [isLoaded, role, request]);
+    void loadChild();
+  }, [isLoaded, role, user, request]);
 
   useEffect(() => {
-    if (!isLoaded || !role || !selectedStudentId) return;
+    if (!isLoaded || !role || !child) return;
     const loadResults = async () => {
       try {
         setLoading(true);
         const payload = await request<{ data: ResultRow[] }>({
           method: "GET",
-          url: `/results/student/${selectedStudentId}`
+          url: `/results/student/${child._id}`
         });
         if (payload?.data) {
           setRows(payload.data.filter((item) => item.published));
@@ -63,18 +69,9 @@ export default function ParentResultsPage() {
       }
     };
     void loadResults();
-  }, [isLoaded, role, selectedStudentId, request]);
+  }, [isLoaded, role, child, request]);
 
-  const studentOptions = useMemo(
-    () =>
-      students.map((s) => ({
-        value: s._id,
-        label: `${s.name}${s.classSection ? " — " + s.classSection : ""}`
-      })),
-    [students]
-  );
-
-  if (!isLoaded || !role) return null;
+  if (!isLoaded || !role || !user) return null;
 
   return (
     <RoleLayout
@@ -82,31 +79,13 @@ export default function ParentResultsPage() {
       title="Child results"
       subtitle="Select a child to view their published results."
     >
-      <div className="space-y-3 mb-4 text-sm">
-        <Card>
-          <div className="p-4 flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
-            <div className="text-xs font-medium">Select child</div>
-            <select
-              className="w-full md:w-64 rounded-md border border-border bg-background px-2 py-1 text-xs"
-              value={selectedStudentId}
-              onChange={(e) => setSelectedStudentId(e.target.value)}
-            >
-              <option value="">Choose student</option>
-              {studentOptions.map((opt) => (
-                <option key={opt.value} value={opt.value}>
-                  {opt.label}
-                </option>
-              ))}
-            </select>
-          </div>
-        </Card>
-      </div>
-
       <Card>
         {loading ? (
           <div className="py-6 text-center text-sm text-muted-foreground">Loading results...</div>
-        ) : !selectedStudentId ? (
-          <div className="py-6 text-center text-sm text-muted-foreground">Select a child to see results.</div>
+        ) : !child ? (
+          <div className="py-6 text-center text-sm text-muted-foreground">
+            No mapped child found. Ensure the student's parent email matches your login email.
+          </div>
         ) : rows.length === 0 ? (
           <div className="py-6 text-center text-sm text-muted-foreground">No published results for this child yet.</div>
         ) : (

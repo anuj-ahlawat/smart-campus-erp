@@ -26,6 +26,13 @@ export default function StaffDashboardPage() {
           ]}
         />
       </Card>
+
+      <Card title="Cafeteria" subtitle="Quick overview for cafeteria-related duties.">
+        <div className="text-xs text-muted-foreground space-y-1 p-3">
+          <p>Use this space to track cafeteria support tasks (stock checks, queue management, cleaning rounds).</p>
+          <p className="mt-1">We can later wire this card to real cafeteria APIs when you are ready.</p>
+        </div>
+      </Card>
     </RoleLayout>
   );
 }

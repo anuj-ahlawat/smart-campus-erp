@@ -10,7 +10,8 @@ import {
   requestPasswordReset,
   resetPassword,
   validateInvite,
-  verifyEmail
+  verifyEmail,
+  updateCurrentUser
 } from "../controllers/auth.controller";
 import { requireAuth } from "../middleware/auth";
 import { roleGuard } from "../middleware/roleGuard";
@@ -34,6 +35,7 @@ router.post("/login", validate(loginSchema), login);
 router.post("/refresh", refresh);
 router.post("/logout", requireAuth, logout);
 router.get("/me", requireAuth, currentUser);
+router.patch("/me", requireAuth, updateCurrentUser);
 router.post("/invite/register", validate(inviteRegisterSchema), registerWithInvite);
 router.post(
   "/invite/create",

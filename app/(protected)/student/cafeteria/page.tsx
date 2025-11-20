@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { RoleLayout } from "@/components/layout/RoleLayout";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -10,59 +10,55 @@ import { QRModal } from "@/components/qr/QRModal";
 import { useRoleGuard } from "@/hooks/useRoleGuard";
 import { useApi } from "@/hooks/useApi";
 
-const todaySlots = [
-  {
-    type: "Breakfast",
-    time: "07:30 AM - 09:30 AM",
-    day: "Wednesday",
-    items: [
-      "Moongdal Chilla (250 Kcal)",
-      "Green Chutney (90 Kcal)",
-      "Boiled Egg (155 Kcal)",
-      "Cornflakes (360 Kcal)",
-      "Tea / Coffee / Milk"
-    ]
-  },
-  {
-    type: "Lunch",
-    time: "12:00 PM - 03:00 PM",
-    day: "Wednesday",
-    items: [
-      "Mix Veg (185 Kcal)",
-      "Cabbage Matar (214 Kcal)",
-      "Rajma (158 Kcal)",
-      "Steamed Rice / Roti",
-      "Masala Chaas (65 Kcal)"
-    ]
-  },
-  {
-    type: "Snack",
-    time: "05:00 PM - 06:00 PM",
-    day: "Wednesday",
-    items: [
-      "Pani Poori (307 Kcal)",
-      "Sweet + Green Chutney",
-      "Tea / Coffee"
-    ]
-  },
-  {
-    type: "Dinner",
-    time: "08:00 PM - 10:00 PM",
-    day: "Wednesday",
-    items: [
-      "Soya Chaap Masala (195 Kcal)",
-      "Dal Tadka",
-      "Jeera Rice / Roti",
-      "Carrot Beetroot (80 Kcal)",
-      "Sweet Dish"
-    ]
-  }
-];
+type MealType = "breakfast" | "lunch" | "dinner" | "snack";
+
+type MenuItem = {
+  itemId: string;
+  name: string;
+  price?: number;
+  available: boolean;
+  mealType: MealType;
+};
 
 export default function StudentCafeteriaPage() {
   const { role, isLoaded } = useRoleGuard("student");
   const { request } = useApi();
   const [scannerOpen, setScannerOpen] = useState(false);
+  const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
+
+  useEffect(() => {
+    const loadMenu = async () => {
+      const today = new Date();
+      const dateStr = today.toISOString().slice(0, 10);
+      try {
+        const payload = await request<{ data: { items?: MenuItem[] } | null }>({
+          method: "GET",
+          url: `/cafeteria/menu?date=${dateStr}`
+        });
+        setMenuItems(payload?.data?.items ?? []);
+      } catch (error) {
+        console.error("Failed to load cafeteria menu", error);
+      }
+    };
+    if (isLoaded && role) {
+      void loadMenu();
+    }
+  }, [isLoaded, role, request]);
+
+  const grouped = useMemo(() => {
+    const groups: Record<MealType, MenuItem[]> = {
+      breakfast: [],
+      lunch: [],
+      snack: [],
+      dinner: []
+    };
+    for (const item of menuItems) {
+      if (groups[item.mealType]) {
+        groups[item.mealType].push(item);
+      }
+    }
+    return groups;
+  }, [menuItems]);
 
   if (!isLoaded || !role) return null;
 
@@ -95,30 +91,41 @@ export default function StudentCafeteriaPage() {
         </div>
       </Card>
 
-      <Card title="Today's Menu" subtitle="19-Nov-2025 · Today · First Floor">
-        <div className="divide-y">
-          {todaySlots.map((slot) => (
-            <div key={slot.type} className="flex flex-col gap-3 py-4 md:flex-row md:items-start md:gap-6">
-              <div className="w-full md:w-1/4 text-sm text-muted-foreground">
-                <div className="font-medium text-foreground">{slot.type}</div>
-                <div className="text-xs mt-1">{slot.time}</div>
-              </div>
-              <div className="w-full md:flex-1 text-xs md:text-sm space-y-1">
-                {slot.items.map((item) => (
-                  <div key={item}>{item}</div>
-                ))}
-              </div>
-              <div className="flex w-full md:w-auto items-center justify-between md:flex-col md:items-end gap-2 text-xs">
-                <span className="rounded-full bg-emerald-50 px-3 py-1 text-[11px] font-medium text-emerald-700 border border-emerald-200">
-                  {slot.day}
-                </span>
-                <Button size="sm" variant="outline" className="px-4">
-                  Select
-                </Button>
-              </div>
-            </div>
-          ))}
-        </div>
+      <Card title="Today's Menu" subtitle="Today · Hostel Mess">
+        {menuItems.length === 0 ? (
+          <div className="py-4 text-xs text-muted-foreground">
+            No menu published for today yet. Please check again later.
+          </div>
+        ) : (
+          <div className="divide-y">
+            {([
+              ["Breakfast", "breakfast"] as const,
+              ["Lunch", "lunch"] as const,
+              ["Snack", "snack"] as const,
+              ["Dinner", "dinner"] as const
+            ]).map(([label, key]) => {
+              const list = grouped[key];
+              if (!list.length) return null;
+              return (
+                <div key={key} className="flex flex-col gap-3 py-4 md:flex-row md:items-start md:gap-6">
+                  <div className="w-full md:w-1/4 text-sm text-muted-foreground">
+                    <div className="font-medium text-foreground">{label}</div>
+                  </div>
+                  <div className="w-full md:flex-1 text-xs md:text-sm space-y-1">
+                    {list.map((item) => (
+                      <div key={item.itemId} className="flex justify-between gap-2">
+                        <span>{item.name}</span>
+                        {typeof item.price === "number" && (
+                          <span className="text-muted-foreground">₹{item.price.toFixed(2)}</span>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
       </Card>
       <Modal
         title="Scan meal QR"

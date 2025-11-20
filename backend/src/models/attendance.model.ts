@@ -4,7 +4,8 @@ const attendanceSchema = new Schema(
   {
     collegeId: { type: Schema.Types.ObjectId, ref: "College", required: true, index: true },
     studentId: { type: Schema.Types.ObjectId, ref: "User", required: true, index: true },
-    subjectId: { type: Schema.Types.ObjectId, ref: "Subject", required: true },
+    // Store subjectId as course code string instead of Subject ObjectId
+    subjectId: { type: String, required: true },
     classSection: { type: String, index: true },
     classDate: { type: Date, required: true },
     status: { type: String, enum: ["present", "absent", "leave"], required: true },
