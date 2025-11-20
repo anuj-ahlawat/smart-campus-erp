@@ -16,6 +16,7 @@ import uploadRoutes from "./upload.routes";
 import collegeRoutes from "./college.routes";
 import dashboardRoutes from "./dashboard.routes";
 import feeRoutes from "./fees.routes";
+import emergencyRoutes from "./emergency.routes";
 
 const router = Router();
 
@@ -35,7 +36,7 @@ router.use("/qr", qrRoutes);
 router.use("/upload", uploadRoutes);
 router.use("/college", collegeRoutes);
 router.use("/fees", feeRoutes);
+router.use("/emergency-alerts", emergencyRoutes);
 router.use("/", dashboardRoutes);
 
 export default router;
-

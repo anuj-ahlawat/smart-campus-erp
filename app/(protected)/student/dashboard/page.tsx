@@ -18,6 +18,8 @@ export default function StudentDashboardPage() {
 
   const [editOpen, setEditOpen] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [emergencyLoading, setEmergencyLoading] = useState(false);
+  const [emergencyError, setEmergencyError] = useState<string | null>(null);
 
   const [form, setForm] = useState({
     name: user?.name || "",
@@ -55,6 +57,52 @@ export default function StudentDashboardPage() {
     classSection: (user as any)?.classSection,
     hostelStatus: (user as any)?.hostelStatus,
     roomNumber: (user as any)?.roomNumber
+  };
+
+  const handleEmergencyHelp = async () => {
+    setEmergencyError(null);
+
+    if (!("geolocation" in navigator)) {
+      setEmergencyError("Location services not available on this device.");
+      alert("Location services are not available on this device.");
+      return;
+    }
+
+    setEmergencyLoading(true);
+
+    try {
+      const position = await new Promise<GeolocationPosition>((resolve, reject) => {
+        navigator.geolocation.getCurrentPosition(resolve, reject, {
+          enableHighAccuracy: true,
+          timeout: 15000,
+          maximumAge: 0
+        });
+      });
+
+      const { latitude, longitude, accuracy } = position.coords;
+
+      await request({
+        method: "POST",
+        url: "/emergency-alerts",
+        data: {
+          latitude,
+          longitude,
+          accuracy
+        }
+      });
+
+      alert(
+        "Emergency alert sent to security.\nStay where you are if safe. Help is on the way."
+      );
+    } catch (error) {
+      console.error("Failed to send emergency alert", error);
+      setEmergencyError(
+        "Failed to send emergency alert. Please try again or contact security directly."
+      );
+      alert("Failed to send emergency alert. Please try again or contact security directly.");
+    } finally {
+      setEmergencyLoading(false);
+    }
   };
 
   const handleSave = async () => {
@@ -97,9 +145,19 @@ export default function StudentDashboardPage() {
       title="Student Dashboard"
       subtitle="Academic summary and personal profile overview."
       actions={
-        <Button size="sm" variant="outline" onClick={() => setEditOpen(true)}>
-          Edit profile
-        </Button>
+        <div className="flex gap-2">
+          <Button
+            size="sm"
+            variant="danger"
+            onClick={handleEmergencyHelp}
+            disabled={emergencyLoading}
+          >
+            {emergencyLoading ? "Sending..." : "Emergency Help"}
+          </Button>
+          <Button size="sm" variant="outline" onClick={() => setEditOpen(true)}>
+            Edit profile
+          </Button>
+        </div>
       }
     >
       <StudentProfileCard
@@ -107,6 +165,12 @@ export default function StudentDashboardPage() {
         title="Student profile"
         subtitle="Core academic and hostel details pulled from your college records."
       />
+
+      {emergencyError && (
+        <div className="mt-2 text-xs text-red-600">
+          {emergencyError}
+        </div>
+      )}
 
       <div className="mt-4 rounded-lg border border-border bg-card/40 p-4 text-xs md:p-5">
         <div className="mb-2 flex items-center justify-between">

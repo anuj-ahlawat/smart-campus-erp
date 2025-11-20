@@ -19,4 +19,4 @@ export * from "./adminLog.model";
 export * from "./token.model";
 export * from "./course.model";
 export * from "./fee.model";
-
+export * from "./emergencyAlert.model";

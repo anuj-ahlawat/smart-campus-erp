@@ -30,4 +30,34 @@ export const resultPublishedTemplate = (subject: string, link: string) => `
   <a href="${link}">View Result</a>
 `;
 
-
+export const emergencyAlertTemplate = (params: {
+  studentName: string;
+  studentId: string;
+  studentEmail: string;
+  latitude: number;
+  longitude: number;
+  mapsLink: string;
+}) => `
+  <h1>Emergency Security Alert</h1>
+  <p><strong>A student needs help.</strong></p>
+  <p>
+    <strong>Name:</strong> ${params.studentName}<br/>
+    <strong>Student ID:</strong> ${params.studentId}<br/>
+    <strong>Email:</strong> ${params.studentEmail}
+  </p>
+  <p>
+    <strong>Location:</strong><br/>
+    Latitude: ${params.latitude}<br/>
+    Longitude: ${params.longitude}<br/>
+  </p>
+  <p>
+    <a href="${params.mapsLink}" target="_blank" rel="noopener noreferrer"
+       style="display:inline-block;padding:10px 14px;background:#dc2626;color:#fff;border-radius:6px;text-decoration:none;">
+      Open live location in Google Maps
+    </a>
+  </p>
+  <p style="color:#6b7280;font-size:12px;">
+    If you cannot open the button above, copy-paste this link into your browser:<br/>
+    ${params.mapsLink}
+  </p>
+`;

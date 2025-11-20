@@ -21,6 +21,6 @@ export const env = {
   smtpPass: process.env.SMTP_PASS ?? "",
   socketCors: process.env.SOCKET_CORS ?? "*",
   qrSigningSecret: process.env.QR_SIGNING_SECRET ?? "qr-secret",
-  inviteCsvUploadDir: process.env.INVITE_UPLOAD_DIR ?? "./uploads/invites"
+  inviteCsvUploadDir: process.env.INVITE_UPLOAD_DIR ?? "./uploads/invites",
+  securityAlertEmail: process.env.SECURITY_ALERT_EMAIL ?? ""
 };
-
