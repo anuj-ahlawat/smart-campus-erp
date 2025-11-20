@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import QRCode from "qrcode.react";
+import { QRCodeCanvas } from "qrcode.react";
 import { Button } from "@/components/ui/button";
 import { Modal } from "@/components/ui/modal";
 
@@ -26,7 +26,7 @@ export const QRModal = ({ value, label = "View QR" }: Props) => {
     >
       <div className="flex flex-col items-center gap-4">
         <div className="rounded-xl border border-border bg-white p-6">
-          <QRCode value={value} size={220} />
+          <QRCodeCanvas value={value} size={220} />
         </div>
         <p className="text-sm text-muted-foreground break-all">{value}</p>
       </div>
