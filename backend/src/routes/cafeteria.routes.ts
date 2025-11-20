@@ -1,9 +1,11 @@
 import { Router } from "express";
 import { getMenu, publishMenu, scanMeal, listCafeteriaLogs } from "../controllers/cafeteria.controller";
+import { submitFeedback, listFeedbackForMenu } from "../controllers/cafeteriaFeedback.controller";
 import { requireAuth } from "../middleware/auth";
 import { roleGuard } from "../middleware/roleGuard";
 import { validate } from "../middleware/validateRequest";
 import { publishMenuSchema, scanMealSchema } from "../validations/cafeteria.validation";
+import { submitFeedbackSchema, listFeedbackSchema } from "../validations/cafeteriaFeedback.validation";
 
 const router = Router();
 
@@ -17,6 +19,8 @@ router.post(
   scanMeal
 );
 router.get("/logs", requireAuth, roleGuard(["cafeteria", "admin"]), listCafeteriaLogs);
+router.post("/feedback", requireAuth, roleGuard(["student"]), validate(submitFeedbackSchema), submitFeedback);
+router.get("/feedback", requireAuth, roleGuard(["cafeteria", "admin"]), validate(listFeedbackSchema), listFeedbackForMenu);
 
 export default router;
 

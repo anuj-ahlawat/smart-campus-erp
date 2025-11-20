@@ -17,7 +17,7 @@ export default function CafeteriaMenuPage() {
   const { request } = useApi();
   const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
   const [items, setItems] = useState<MenuItem[]>([
-    { name: "Paneer Bowl", price: 80, available: true, mealType: "lunch" }
+    { name: "Paneer Bowl", price: 0, available: true, mealType: "lunch" }
   ]);
 
   const publishMenu = async () => {
@@ -78,20 +78,20 @@ export default function CafeteriaMenuPage() {
                 </select>
               )
             },
-            { key: "name", header: "Item" },
             {
-              key: "price",
-              header: "Price",
+              key: "name",
+              header: "Item",
               render: (row, index) => (
                 <input
-                  type="number"
-                  className="w-24 rounded-md border border-border bg-transparent p-1 text-sm"
-                  value={row.price}
+                  type="text"
+                  className="w-full rounded-md border border-border bg-transparent p-1 text-xs md:text-sm"
+                  value={row.name}
                   onChange={(event) =>
                     setItems((prev) =>
-                      prev.map((item, idx) => (idx === index ? { ...item, price: Number(event.target.value) } : item))
+                      prev.map((item, idx) => (idx === index ? { ...item, name: event.target.value } : item))
                     )
                   }
+                  placeholder="Enter dish name"
                 />
               )
             },
@@ -118,7 +118,7 @@ export default function CafeteriaMenuPage() {
           onClick={() =>
             setItems((prev) => [
               ...prev,
-              { name: "New Item", price: 0, available: true, mealType: "lunch" }
+              { name: "New item", price: 0, available: true, mealType: "lunch" }
             ])
           }
         >

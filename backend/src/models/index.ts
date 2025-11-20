@@ -12,6 +12,7 @@ export * from "./result.model";
 export * from "./note.model";
 export * from "./cafeteriaMenu.model";
 export * from "./cafeteriaLog.model";
+export * from "./cafeteriaFeedback.model";
 export * from "./hostelRoom.model";
 export * from "./announcement.model";
 export * from "./securityLog.model";

@@ -25,6 +25,10 @@ export default function StudentCafeteriaPage() {
   const { request } = useApi();
   const [scannerOpen, setScannerOpen] = useState(false);
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
+  const [rating, setRating] = useState<number | null>(null);
+  const [comment, setComment] = useState("");
+  const [submittingFeedback, setSubmittingFeedback] = useState(false);
+  const [feedbackMessage, setFeedbackMessage] = useState<string | null>(null);
 
   useEffect(() => {
     const loadMenu = async () => {
@@ -44,6 +48,31 @@ export default function StudentCafeteriaPage() {
       void loadMenu();
     }
   }, [isLoaded, role, request]);
+
+  const handleSubmitFeedback = async () => {
+    if (!rating) return;
+    setSubmittingFeedback(true);
+    setFeedbackMessage(null);
+    try {
+      const today = new Date();
+      const dateStr = today.toISOString().slice(0, 10);
+      await request({
+        method: "POST",
+        url: "/cafeteria/feedback",
+        data: {
+          rating,
+          comment: comment.trim() || undefined,
+          date: dateStr
+        }
+      });
+      setFeedbackMessage("Thank you for your feedback.");
+    } catch (error) {
+      console.error("Failed to submit cafeteria feedback", error);
+      setFeedbackMessage("Could not submit feedback. Please try again later.");
+    } finally {
+      setSubmittingFeedback(false);
+    }
+  };
 
   const grouped = useMemo(() => {
     const groups: Record<MealType, MenuItem[]> = {
@@ -90,6 +119,55 @@ export default function StudentCafeteriaPage() {
           </div>
         </div>
       </Card>
+      <Card
+        title="Rate today's food"
+        subtitle="Share quick feedback with cafeteria staff for today's menu."
+        className="mt-4"
+      >
+        <div className="space-y-3 text-xs md:text-sm">
+          <div className="flex items-center gap-2">
+            <span className="font-medium">Rating:</span>
+            <div className="flex gap-1">
+              {[1, 2, 3, 4, 5].map((value) => (
+                <button
+                  key={value}
+                  type="button"
+                  onClick={() => setRating(value)}
+                  className={`h-7 w-7 rounded-full border text-xs flex items-center justify-center ${
+                    rating === value ? "bg-primary text-primary-foreground" : "bg-background"
+                  }`}
+                >
+                  {value}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div>
+            <label className="block mb-1 font-medium">Comment (optional)</label>
+            <textarea
+              className="w-full rounded-md border border-border bg-background px-2 py-1 min-h-[60px]"
+              value={comment}
+              onChange={(e) => setComment(e.target.value)}
+              placeholder="e.g. Lunch was tasty but rice was a bit hard."
+            />
+          </div>
+          <div className="flex items-center justify-between gap-2">
+            <div className="text-[11px] text-muted-foreground">
+              Your feedback is visible to cafeteria staff only.
+            </div>
+            <Button
+              size="sm"
+              onClick={handleSubmitFeedback}
+              disabled={!rating || submittingFeedback}
+            >
+              {submittingFeedback ? "Submitting..." : "Submit feedback"}
+            </Button>
+          </div>
+          {feedbackMessage && (
+            <div className="text-[11px] text-muted-foreground">{feedbackMessage}</div>
+          )}
+        </div>
+      </Card>
 
       <Card title="Today's Menu" subtitle="Today · Hostel Mess">
         {menuItems.length === 0 ? (
@@ -115,9 +193,6 @@ export default function StudentCafeteriaPage() {
                     {list.map((item) => (
                       <div key={item.itemId} className="flex justify-between gap-2">
                         <span>{item.name}</span>
-                        {typeof item.price === "number" && (
-                          <span className="text-muted-foreground">₹{item.price.toFixed(2)}</span>
-                        )}
                       </div>
                     ))}
                   </div>

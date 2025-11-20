@@ -1,7 +1,6 @@
-<<<<<<< HEAD
 ## Smart Campus ERP
 
-Smart Campus is a CAMU-like reference implementation that ships a **custom JWT + refresh token auth system**, role-isolated layouts, invite-only onboarding, QR powered outpasses, Socket.io notifications, and full Express/Mongoose backend—no Clerk, Docker, or Redis required.
+Smart Campus is a CAMU-like reference implementation that ships a **custom JWT + refresh token auth system**, role-isolated layouts, invite-only onboarding, QR powered outpasses, Socket.io notifications, an Emergency Security Alert feature, and full Express/Mongoose backend—no Clerk, Docker, or Redis required.
 
 ### Stack at a Glance
 
@@ -62,6 +61,31 @@ SMTP_PASS=
 SOCKET_CORS=http://localhost:3000
 ```
 
+#### Emergency Security Alert – SMTP / Gmail Setup
+
+The Emergency Security Alert feature sends emails to security staff with the student's details and live location. To enable email delivery:
+
+- Backend reads SMTP config from `backend/.env` via `backend/src/config/env.ts`.
+- For **Gmail SMTP**, configure:
+
+```env
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_USER=yourgmail@gmail.com              # Gmail account used to send alerts
+SMTP_PASS=your_gmail_app_password          # 16-char App Password (not normal password)
+MAILER_FROM="Smart Campus <yourgmail@gmail.com>"
+SECURITY_ALERT_EMAIL=security-team@yourcollege.com
+```
+
+Steps for Gmail App Password:
+
+1. Turn on 2-Step Verification for the Gmail account.
+2. In Google Account → Security → App passwords, create an app password for **Mail**.
+3. Copy the 16-character value (without spaces) into `SMTP_PASS`.
+4. Restart the backend (`cd backend && npm run dev`).
+
+You can also point `SMTP_HOST`/`SMTP_PORT`/`SMTP_USER`/`SMTP_PASS` to any other SMTP provider (e.g. Mailtrap, SendGrid).
+
 ### Getting Started
 
 ```bash
@@ -100,6 +124,7 @@ The Next.js `middleware.ts` reads `campus_role`/`campus_authenticated` cookies (
 - **Cafeteria**: `GET/POST /api/cafeteria/menu`, `POST /api/cafeteria/scan`, `GET /api/cafeteria/logs`
 - **Academic Content**: `/api/results/upload`, `/api/results/student/:id`, `/api/notes/upload`, `/api/notes/subject/:id`
 - **Scheduling & Communication**: Timetable/Holiday/Event CRUD (`/api/timetable`, `/api/holidays`, `/api/events`), `/api/notifications/send`, `/api/upload`
+- **Emergency Security Alert**: `POST /api/emergency-alerts` – authenticated students send GPS coordinates; backend stores an `EmergencyAlert` record and emails all `security` role users plus `SECURITY_ALERT_EMAIL` with a Google Maps link.
 
 Every controller returns structured errors `{ status, code, message, details? }`, logs admin actions, validates payloads with Zod, and emits Socket.io events when relevant.
 
@@ -119,6 +144,3 @@ npm run cy:run
 - **Backend**: Deploy `backend/` to any Node 20+ host (PM2, systemd, Fly.io, Railway). Run `npm install && npm run build && npm start`.
 - **CI/CD**: `.github/workflows/ci.yml` caches npm modules, runs lint, executes backend tests, and builds the Next app. Extend it with deploy steps as needed.
 - **Migrations**: `backend/scripts/import-invites.ts` imports CSV invite codes (Usage: `ts-node scripts/import-invites.ts invites.csv <collegeId> [adminId]`).
-=======
-# smart-campus-erp
->>>>>>> e98db08b9db249e2d60e42ab469d07b5b040bf27
