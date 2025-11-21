@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter, useSearchParams } from "next/navigation";
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import { PublicLayout } from "@/components/layout/PublicLayout";
 import { FormField } from "@/components/ui/form-field";
 import { Button } from "@/components/ui/button";
@@ -9,6 +9,14 @@ import { API_BASE_URL } from "@/src/lib/routes";
 import { handleApiErrors } from "@/src/lib/handleErrors";
 
 export default function ResetPasswordPage() {
+  return (
+    <Suspense fallback={null}>
+      <ResetPasswordContent />
+    </Suspense>
+  );
+}
+
+function ResetPasswordContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const initialToken = searchParams.get("token") ?? "";
@@ -72,5 +80,3 @@ export default function ResetPasswordPage() {
     </PublicLayout>
   );
 }
-
-

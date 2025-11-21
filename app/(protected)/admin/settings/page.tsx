@@ -21,19 +21,27 @@ export default function AdminSettingsPage() {
 
   useEffect(() => {
     const load = async () => {
-      const payload = await request<{ data?: { academicYear: string; timetableConfig?: { slotsPerDay: number }; hostelConfig?: { curfewTime: string; totalRooms: number } } }>({
+      const payload = await request<{
+        data?: {
+          academicYear: string;
+          timetableConfig?: { slotsPerDay: number };
+          hostelConfig?: { curfewTime: string; totalRooms: number };
+        };
+      }>({
         method: "GET",
         url: "/college/settings"
       });
-      if (payload?.data) {
-        setForm((prev) => ({
-          ...prev,
-          academicYear: payload.data.academicYear ?? prev.academicYear,
-          slotsPerDay: payload.data.timetableConfig?.slotsPerDay ?? prev.slotsPerDay,
-          curfewTime: payload.data.hostelConfig?.curfewTime ?? prev.curfewTime,
-          totalRooms: payload.data.hostelConfig?.totalRooms ?? prev.totalRooms
-        }));
-      }
+
+      const settings = payload?.data;
+      if (!settings) return;
+
+      setForm((prev) => ({
+        ...prev,
+        academicYear: settings.academicYear ?? prev.academicYear,
+        slotsPerDay: settings.timetableConfig?.slotsPerDay ?? prev.slotsPerDay,
+        curfewTime: settings.hostelConfig?.curfewTime ?? prev.curfewTime,
+        totalRooms: settings.hostelConfig?.totalRooms ?? prev.totalRooms
+      }));
     };
     load();
   }, [request]);

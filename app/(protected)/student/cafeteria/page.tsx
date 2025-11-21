@@ -20,11 +20,21 @@ type MenuItem = {
   mealType: MealType;
 };
 
+type CrowdStatus = "low" | "moderate" | "high";
+
+type CrowdItem = {
+  messId: string;
+  crowdCount: number;
+  status: CrowdStatus;
+  updatedAt: string;
+};
+
 export default function StudentCafeteriaPage() {
   const { role, isLoaded } = useRoleGuard("student");
   const { request } = useApi();
   const [scannerOpen, setScannerOpen] = useState(false);
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
+  const [crowd, setCrowd] = useState<CrowdItem[]>([]);
   const [rating, setRating] = useState<number | null>(null);
   const [comment, setComment] = useState("");
   const [submittingFeedback, setSubmittingFeedback] = useState(false);
@@ -47,6 +57,36 @@ export default function StudentCafeteriaPage() {
     if (isLoaded && role) {
       void loadMenu();
     }
+  }, [isLoaded, role, request]);
+
+  useEffect(() => {
+    if (!isLoaded || !role) return;
+
+    let cancelled = false;
+
+    const loadCrowd = async () => {
+      try {
+        const payload = await request<{ data: CrowdItem[] }>({
+          method: "GET",
+          url: "/cafeteria/crowd"
+        });
+        if (!cancelled) {
+          setCrowd(payload?.data ?? []);
+        }
+      } catch (error) {
+        // fail silently for UI; menu and scanning should still work
+        if (!cancelled) {
+          setCrowd([]);
+        }
+      }
+    };
+
+    void loadCrowd();
+    const id = setInterval(loadCrowd, 20000);
+    return () => {
+      cancelled = true;
+      clearInterval(id);
+    };
   }, [isLoaded, role, request]);
 
   const handleSubmitFeedback = async () => {
@@ -95,8 +135,49 @@ export default function StudentCafeteriaPage() {
     <RoleLayout
       role="student"
       title="Cafeteria"
-      subtitle="Menu sourced from GET /api/cafeteria/menu?date=YYYY-MM-DD. Scanner logs meals via POST /api/cafeteria/scan."
+      subtitle="Menu"
     >
+      <Card
+        title="Mess crowd right now"
+        subtitle="Based on plate QR scans in the last 20 minutes."
+        className="mb-4"
+      >
+        {crowd.length === 0 ? (
+          <div className="py-2 text-xs text-muted-foreground">
+            Crowd data will appear here when students start scanning.
+          </div>
+        ) : (
+          <div className="grid gap-3 md:grid-cols-3 text-xs md:text-sm">
+            {crowd.map((item) => {
+              const label = item.messId || "Main mess";
+              const updated = new Date(item.updatedAt).toLocaleTimeString();
+              const colorClasses =
+                item.status === "low"
+                  ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                  : item.status === "moderate"
+                  ? "bg-amber-50 text-amber-700 border-amber-200"
+                  : "bg-red-50 text-red-700 border-red-200";
+              const statusLabel =
+                item.status === "low" ? "Low" : item.status === "moderate" ? "Moderate" : "High";
+              return (
+                <div
+                  key={item.messId || "default"}
+                  className={`rounded-xl border px-3 py-2 flex flex-col gap-1 ${colorClasses}`}
+                >
+                  <div className="flex items-center justify-between">
+                    <span className="font-medium">{label}</span>
+                    <span className="text-[11px]">{statusLabel}</span>
+                  </div>
+                  <div className="text-[11px] text-muted-foreground">
+                    {item.crowdCount} scans in the last 20 minutes · updated {updated}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </Card>
+
       <Card className="mb-4 border-yellow-300 bg-yellow-50/70">
         <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between text-sm">
           <div className="flex items-center gap-3">

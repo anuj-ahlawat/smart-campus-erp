@@ -41,15 +41,34 @@ export const publishMenu = asyncHandler(async (req: AuthRequest, res: Response) 
 
 export const scanMeal = asyncHandler(async (req: AuthRequest, res: Response) => {
   const { payload } = req.body as { payload: string };
+
+  // If payload is not JSON (e.g. "CAFETERIA_REUSABLE_QR_DEMO"), accept it as a simple demo scan.
+  if (!payload || !payload.trim().startsWith("{")) {
+    return res.json({
+      status: StatusCodes.OK,
+      data: {
+        rawPayload: payload ?? null
+      }
+    });
+  }
+
   try {
-    const parsed = JSON.parse(payload);
+    const parsed = JSON.parse(payload) as {
+      studentId: string;
+      menuId: string;
+      messId?: string;
+      itemId?: string;
+    };
+
     const log = await CafeteriaLogModel.create({
       collegeId: req.authUser?.collegeId,
       studentId: parsed.studentId,
       menuId: parsed.menuId,
+      messId: parsed.messId,
       itemId: parsed.itemId,
       status: "eaten"
     });
+
     res.json({ status: StatusCodes.OK, data: log });
   } catch (error) {
     res.status(StatusCodes.BAD_REQUEST).json({
@@ -78,5 +97,49 @@ export const listCafeteriaLogs = asyncHandler(async (req: AuthRequest, res: Resp
   }
   const logs = await CafeteriaLogModel.find(criteria).sort({ createdAt: -1 });
   res.json({ status: StatusCodes.OK, data: logs });
+});
+
+export const getCafeteriaCrowd = asyncHandler(async (req: AuthRequest, res: Response) => {
+  const now = Date.now();
+  const windowMinutes = 20;
+  const since = new Date(now - windowMinutes * 60 * 1000);
+
+  const match: Record<string, unknown> = {
+    collegeId: req.authUser?.collegeId,
+    timestamp: { $gte: since }
+  };
+
+  if (req.query.messId) {
+    match.messId = req.query.messId;
+  }
+
+  const rows = await CafeteriaLogModel.aggregate([
+    { $match: match },
+    {
+      $group: {
+        _id: "$messId",
+        crowdCount: { $sum: 1 },
+        updatedAt: { $max: "$timestamp" }
+      }
+    },
+    {
+      $project: {
+        _id: 0,
+        messId: { $ifNull: ["$_id", "default"] },
+        crowdCount: 1,
+        updatedAt: 1
+      }
+    }
+  ]);
+
+  const data = rows.map((row: { messId: string; crowdCount: number; updatedAt: Date }) => {
+    let status: "low" | "moderate" | "high";
+    if (row.crowdCount <= 30) status = "low";
+    else if (row.crowdCount <= 80) status = "moderate";
+    else status = "high";
+    return { ...row, status };
+  });
+
+  res.json({ status: StatusCodes.OK, data });
 });
 

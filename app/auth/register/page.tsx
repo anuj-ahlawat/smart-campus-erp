@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { PublicLayout } from "@/components/layout/PublicLayout";
 import { FormField } from "@/components/ui/form-field";
 import { Button } from "@/components/ui/button";
@@ -12,6 +12,14 @@ import { handleApiErrors } from "@/src/lib/handleErrors";
 import { useInvite } from "@/hooks/useInvite";
 
 export default function InviteRegisterPage() {
+  return (
+    <Suspense fallback={null}>
+      <InviteRegisterContent />
+    </Suspense>
+  );
+}
+
+function InviteRegisterContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const inviteCode = searchParams.get("code") ?? "";
@@ -125,5 +133,3 @@ export default function InviteRegisterPage() {
     </PublicLayout>
   );
 }
-
-

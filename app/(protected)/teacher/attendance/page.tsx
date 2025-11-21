@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { RoleLayout } from "@/components/layout/RoleLayout";
 import { Card } from "@/components/ui/card";
@@ -16,8 +16,16 @@ type AttendanceRow = {
   present: boolean;
   attendanceId?: string;
 };
-
+ 
 export default function TeacherAttendancePage() {
+  return (
+    <Suspense fallback={null}>
+      <TeacherAttendanceContent />
+    </Suspense>
+  );
+}
+
+function TeacherAttendanceContent() {
   const searchParams = useSearchParams();
   const { role, isLoaded } = useRoleGuard(["teacher", "admin"]);
   const { request } = useApi();

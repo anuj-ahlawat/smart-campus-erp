@@ -105,23 +105,7 @@ export const updateCurrentUser = asyncHandler(async (req: AuthRequest, res) => {
     });
   }
 
-  type AllowedField =
-    | "name"
-    | "phone"
-    | "department"
-    | "classSection"
-    | "hostelStatus"
-    | "roomNumber"
-    | "degree"
-    | "course"
-    | "semester"
-    | "admissionNo"
-    | "admissionYear"
-    | "rollNo"
-    | "guardianPhone"
-    | "address";
-
-  const allowedFields: AllowedField[] = [
+  const allowedFields = [
     "name",
     "phone",
     "department",
@@ -136,13 +120,15 @@ export const updateCurrentUser = asyncHandler(async (req: AuthRequest, res) => {
     "rollNo",
     "guardianPhone",
     "address"
-  ];
+  ] as const;
+
+  type AllowedField = (typeof allowedFields)[number];
 
   const updatePayload: Partial<Record<AllowedField, unknown>> = {};
+  const body = req.body as Record<string, unknown>;
   for (const field of allowedFields) {
-    if (Object.prototype.hasOwnProperty.call(req.body, field)) {
-      (updatePayload as Record<string, unknown>)[field] =
-        (req.body as Record<string, unknown>)[field];
+    if (Object.prototype.hasOwnProperty.call(body, field)) {
+      updatePayload[field] = body[field];
     }
   }
 
@@ -374,7 +360,7 @@ export const createInvite = asyncHandler(async (req: AuthRequest, res) => {
     email?: string;
   }> = [];
   if (bulkCsv) {
-    const rows = bulkCsv.split("\n").map((row) => row.trim()).filter(Boolean);
+    const rows = bulkCsv.split("\n").map((row: string) => row.trim()).filter(Boolean);
     for (const row of rows) {
       const [email, rowRole, rowDept, rowClass] = row.split(",");
       invitesPayload.push({

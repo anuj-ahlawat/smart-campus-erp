@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { PublicLayout } from "@/components/layout/PublicLayout";
 import { Button } from "@/components/ui/button";
@@ -10,6 +10,14 @@ import { handleApiErrors } from "@/src/lib/handleErrors";
 type VerifyState = "idle" | "verifying" | "success" | "error";
 
 export default function VerifyEmailPage() {
+  return (
+    <Suspense fallback={null}>
+      <VerifyEmailContent />
+    </Suspense>
+  );
+}
+
+function VerifyEmailContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const token = searchParams.get("token");
@@ -48,7 +56,10 @@ export default function VerifyEmailPage() {
   };
 
   return (
-    <PublicLayout title="Email Verification" subtitle="Email verification is disabled. You can sign in directly after registration.">
+    <PublicLayout
+      title="Email Verification"
+      subtitle="Email verification is disabled. You can sign in directly after registration."
+    >
       <div className="rounded-2xl border border-border bg-muted/40 p-4 text-sm">{renderStatus()}</div>
       <Button className="mt-6 w-full" onClick={() => router.replace("/auth/login")}>
         Continue to login
@@ -56,5 +67,3 @@ export default function VerifyEmailPage() {
     </PublicLayout>
   );
 }
-
-

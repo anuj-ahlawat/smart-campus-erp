@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import { PublicLayout } from "@/components/layout/PublicLayout";
 import { FormField } from "@/components/ui/form-field";
 import { Button } from "@/components/ui/button";
@@ -10,6 +10,14 @@ import { useAuth } from "@/hooks/useAuth";
 import { ROLE_REDIRECTS, type UserRole } from "@/types/roles";
 
 export default function LoginPage() {
+  return (
+    <Suspense fallback={null}>
+      <LoginContent />
+    </Suspense>
+  );
+}
+
+function LoginContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { login } = useAuth();
@@ -69,5 +77,3 @@ export default function LoginPage() {
     </PublicLayout>
   );
 }
-
-

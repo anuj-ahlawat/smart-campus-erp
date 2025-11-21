@@ -1,4 +1,4 @@
-import { Schema, model, type InferSchemaType, type HydratedDocument } from "mongoose";
+import { Schema, model, type InferSchemaType } from "mongoose";
 
 const userSchema = new Schema(
   {
@@ -42,7 +42,9 @@ const userSchema = new Schema(
 userSchema.index({ collegeId: 1, role: 1 });
 userSchema.index({ parentId: 1 });
 
-export type User = InferSchemaType<typeof userSchema>;
-export type UserDocument = HydratedDocument<User>;
+type UserSchema = InferSchemaType<typeof userSchema>;
+export interface UserDocument extends UserSchema {
+  _id: unknown;
+}
 export const UserModel = model("User", userSchema);
 

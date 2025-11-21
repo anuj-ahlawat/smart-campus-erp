@@ -11,10 +11,7 @@ type ProvidersProps = {
 };
 
 export function Providers({ children }: ProvidersProps) {
-  const queryClientRef = useRef<QueryClient>();
-  if (!queryClientRef.current) {
-    queryClientRef.current = new QueryClient();
-  }
+  const queryClientRef = useRef(new QueryClient());
 
   return (
     <QueryClientProvider client={queryClientRef.current}>

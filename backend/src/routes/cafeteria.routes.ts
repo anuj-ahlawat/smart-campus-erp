@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { getMenu, publishMenu, scanMeal, listCafeteriaLogs } from "../controllers/cafeteria.controller";
+import { getMenu, publishMenu, scanMeal, listCafeteriaLogs, getCafeteriaCrowd } from "../controllers/cafeteria.controller";
 import { submitFeedback, listFeedbackForMenu } from "../controllers/cafeteriaFeedback.controller";
 import { requireAuth } from "../middleware/auth";
 import { roleGuard } from "../middleware/roleGuard";
@@ -19,6 +19,7 @@ router.post(
   scanMeal
 );
 router.get("/logs", requireAuth, roleGuard(["cafeteria", "admin"]), listCafeteriaLogs);
+router.get("/crowd", requireAuth, getCafeteriaCrowd);
 router.post("/feedback", requireAuth, roleGuard(["student"]), validate(submitFeedbackSchema), submitFeedback);
 router.get("/feedback", requireAuth, roleGuard(["cafeteria", "admin"]), validate(listFeedbackSchema), listFeedbackForMenu);
 

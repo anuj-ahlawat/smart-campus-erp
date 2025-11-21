@@ -5,6 +5,7 @@ const cafeteriaLogSchema = new Schema(
     collegeId: { type: Schema.Types.ObjectId, ref: "College", required: true, index: true },
     studentId: { type: Schema.Types.ObjectId, ref: "User", required: true },
     menuId: { type: Schema.Types.ObjectId, ref: "CafeteriaMenu", required: true },
+    messId: { type: String, index: true },
     itemId: { type: String },
     timestamp: { type: Date, default: Date.now },
     status: { type: String, enum: ["eaten", "not-eaten"], default: "eaten" }

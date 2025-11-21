@@ -4,10 +4,7 @@ import { useEffect } from "react";
 import { useSocketContext } from "@/providers/socket-provider";
 import { Socket } from "socket.io-client";
 
-export const useSocket = <T extends (...args: never[]) => void>(
-  event: string,
-  handler: T
-) => {
+export const useSocket = (event: string, handler: (...args: any[]) => void) => {
   const socket = useSocketContext();
 
   useEffect(() => {

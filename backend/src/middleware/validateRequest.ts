@@ -18,7 +18,10 @@ export const validate =
         details: result.error.flatten()
       });
     }
-    Object.assign(req, result.data);
+    // Avoid writing to req.query, which is a read-only getter in Express 5 / Node 18+
+    // Only overwrite the validated body and params.
+    (req as any).body = result.data.body;
+    (req as any).params = result.data.params;
     next();
   };
 

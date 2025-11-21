@@ -4,7 +4,7 @@ Smart Campus is a CAMU-like reference implementation that ships a **custom JWT +
 
 ### Stack at a Glance
 
-- **Frontend**: Next.js 14 App Router · TypeScript · Tailwind CSS · shadcn/ui refinements · Recharts
+- **Frontend**: Next.js 16 App Router · TypeScript · Tailwind CSS · shadcn/ui refinements · Recharts
 - **Auth**: Email-password with bcrypt hashing, invite validation, email verification tokens, short-lived JWT access token + HttpOnly refresh cookie
 - **Backend**: Node.js + Express + Zod validations + Socket.io + Nodemailer + Cloudinary/S3 upload helper (FastAPI stub included for parity)
 - **Database**: MongoDB + Mongoose models with indexes for every collection listed in the spec
